@@ -63,6 +63,23 @@
             color: #d32f2f;
             font-weight: bold;
         }
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-top: 8px;
+            height: 12px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 1s linear, background-color 0.5s;
+            border-radius: 4px;
+        }
+        .progress-green  { background-color: #4CAF50; }
+        .progress-orange { background-color: #FF9800; }
+        .progress-red    { background-color: #F44336; }
         hr {
             margin: 25px 0;
         }
@@ -74,7 +91,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Cafe Slot Manager (No Login)</h2>
+        <h2>Cafe Slot Manager (No Login - 2 min slots for testing)</h2>
 
         <h3>Custom Ringtone (optional - shared)</h3>
         <input id="ringtone-file" type="file" accept="audio/*">
@@ -83,7 +100,7 @@
 
         <hr>
 
-        <h3>Start New 2-Hour Slot</h3>
+        <h3>Start New 2-Minute Slot</h3>
         <input id="table-name" placeholder="Table Name / Number" required>
         <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
         <input id="customer-name" placeholder="Customer Name" required>
@@ -97,7 +114,7 @@
 
     <script>
         // REPLACE WITH YOUR FIREBASE CONFIG
-       const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -111,9 +128,11 @@
         const db = firebase.firestore();
         const storage = firebase.storage();
 
-        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3'; // fallback
-        let slots = {};     // local cache: id → data
-        let timers = {};    // slotId → timeout
+        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3';
+        let slots = {};     // id → data
+        let timers = {};    // slotId → timeout ID
+
+        const SLOT_DURATION_MS = 2 * 60 * 1000;  // ← 2 minutes (change here later if needed)
 
         function loadSettings() {
             db.collection('settings').doc('global').get()
@@ -153,7 +172,7 @@
             }
 
             const now = new Date();
-            const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+            const end = new Date(now.getTime() + SLOT_DURATION_MS);
 
             db.collection('slots').add({
                 table,
@@ -171,17 +190,14 @@
         }
 
         function renewSlot(slotId) {
-            if (!confirm("Renew this slot for another 2 hours?")) return;
+            if (!confirm("Renew this slot for another 2 minutes?")) return;
 
-            const newEnd = new Date(Date.now() + 2 * 60 * 60 * 1000);
+            const newEnd = new Date(Date.now() + SLOT_DURATION_MS);
 
             db.collection('slots').doc(slotId).update({
                 end: firebase.firestore.Timestamp.fromDate(newEnd)
             })
-            .then(() => {
-                console.log("Slot renewed:", slotId);
-                // UI will auto-update via listener
-            })
+            .then(() => console.log("Slot renewed:", slotId))
             .catch(err => alert("Renew failed: " + err.message));
         }
 
@@ -217,7 +233,7 @@
         }
 
         function startUIUpdater() {
-            setInterval(updateSlotsUI, 15000);
+            setInterval(updateSlotsUI, 1000);  // faster refresh (1s) for smoother progress bar
         }
 
         function updateSlotsUI() {
@@ -226,30 +242,47 @@
             const now = Date.now();
 
             Object.entries(slots).forEach(([id, data]) => {
-                const msLeft = data.end.toDate() - now;
+                const endTime = data.end.toDate().getTime();
+                const startTime = data.start.toDate().getTime();
+                const totalMs = endTime - startTime;
+                const elapsedMs = now - startTime;
+                const remainingMs = endTime - now;
+
+                let percentLeft = (remainingMs / totalMs) * 100;
+                percentLeft = Math.max(0, Math.min(100, percentLeft));
+
                 let status = '';
                 let className = '';
+                let progressClass = '';
 
-                if (msLeft <= 0) {
+                if (remainingMs <= 0) {
                     status = 'Expired';
                     className = 'expired';
+                    progressClass = 'progress-red';
+                    percentLeft = 0;
                 } else {
-                    const mins = Math.floor(msLeft / 60000);
-                    const hours = Math.floor(mins / 60);
-                    const remMins = mins % 60;
-                    status = hours > 0 ? `${hours}h ${remMins}m left` : `${mins}m left`;
+                    const mins = Math.floor(remainingMs / 60000);
+                    const secs = Math.floor((remainingMs % 60000) / 1000);
+                    status = mins > 0 ? `${mins}m ${secs}s left` : `${secs}s left`;
+
+                    if (percentLeft > 50)      progressClass = 'progress-green';
+                    else if (percentLeft > 20) progressClass = 'progress-orange';
+                    else                       progressClass = 'progress-red';
                 }
 
                 const div = document.createElement('div');
                 div.className = 'slot-item ' + className;
                 div.innerHTML = `
                     Table <b>${data.table}</b> • ${data.name || '—'} • ${data.mobile || '—'} • ${status}
+                    <div class="progress-container">
+                        <div class="progress-bar ${progressClass}" style="width: ${percentLeft}%"></div>
+                    </div>
                 `;
 
-                if (msLeft > 0) {
+                if (remainingMs > 0) {
                     const renewBtn = document.createElement('button');
                     renewBtn.className = 'renew-btn';
-                    renewBtn.textContent = 'Renew (2h)';
+                    renewBtn.textContent = 'Renew (2 min)';
                     renewBtn.onclick = () => renewSlot(id);
                     div.appendChild(renewBtn);
                 }
