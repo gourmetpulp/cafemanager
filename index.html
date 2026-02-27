@@ -176,11 +176,32 @@
 
         // Signup function
         function signup() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            auth.createUserWithEmailAndPassword(email, password)
-                .catch(error => alert(error.message));
-        }
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+        alert("Please enter email and password");
+        return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            alert("Sign up successful! You can now log in.");
+            console.log("User created:", userCredential.user);
+        })
+        .catch((error) => {
+            console.error("Signup error:", error.code, error.message);
+            let msg = error.message;
+            if (error.code === 'auth/operation-not-allowed') {
+                msg = "Email/Password sign-up is not enabled in Firebase console.";
+            } else if (error.code === 'auth/weak-password') {
+                msg = "Password should be at least 6 characters.";
+            } else if (error.code === 'auth/email-already-in-use') {
+                msg = "This email is already registered. Please log in.";
+            }
+            alert("Sign up failed: " + msg);
+        });
+}
 
         // Logout function
         function logout() {
@@ -308,3 +329,4 @@
     </script>
 </body>
 </html>
+
