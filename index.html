@@ -4,135 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cafe Slot Manager</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
             background-color: #f4f4f4;
         }
-        h1 {
-            text-align: center;
-        }
-        .form-container, .login-container {
+        .container {
+            max-width: 800px;
+            margin: auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        input[type="text"], input[type="email"], input[type="password"], input[type="file"] {
+        input, button {
+            margin: 5px 0;
+            padding: 8px;
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
             box-sizing: border-box;
         }
         button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            width: auto;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #45a049;
-        }
-        .slot-list {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        #slots {
+            margin-top: 20px;
         }
         .slot-item {
             border-bottom: 1px solid #ddd;
             padding: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .slot-item:last-child {
-            border-bottom: none;
-        }
-        .expired {
-            color: red;
-            font-weight: bold;
-        }
-        .actions button {
-            width: auto;
-            margin-left: 10px;
-            padding: 5px 10px;
-            font-size: 0.9em;
-        }
-        .renew-btn {
-            background-color: #2196F3;
-        }
-        .renew-btn:hover {
-            background-color: #1E88E5;
-        }
-        .remove-btn {
-            background-color: #f44336;
-        }
-        .remove-btn:hover {
-            background-color: #d32f2f;
-        }
-        #logoutBtn {
-            width: auto;
-            background-color: #f44336;
-            margin-top: 20px;
         }
         @media (max-width: 600px) {
-            body {
+            .container {
                 padding: 10px;
-            }
-            .slot-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .actions {
-                margin-top: 10px;
             }
         }
     </style>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js"></script>
 </head>
 <body>
-    <h1>Cafe Slot Manager</h1>
-    
-    <div id="loginContainer" class="login-container">
-        <input type="email" id="email" placeholder="Email" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button onclick="login()">Login</button>
-        <button onclick="signup()" style="background-color: #2196F3; margin-top: 10px;">Sign Up</button>
-    </div>
-    
-    <div id="mainContainer" style="display: none;">
-        <div class="form-container">
-            <input type="text" id="tableName" placeholder="Table Name/Number" required>
-            <input type="text" id="mobileNumber" placeholder="10-Digit Mobile Number" pattern="\d{10}" required>
-            <input type="text" id="customerName" placeholder="Customer Name" required>
-            <input type="file" id="ringtone" accept="audio/*">
-            <button onclick="startSlot()">Start Slot</button>
+    <div class="container">
+        <div id="login-section">
+            <h2>Login or Signup</h2>
+            <input id="email" type="email" placeholder="Email">
+            <input id="password" type="password" placeholder="Password">
+            <button onclick="signup()">Signup with Email</button>
+            <button onclick="login()">Login with Email</button>
+            <button onclick="googleLogin()">Login with Google</button>
         </div>
-        
-        <div class="slot-list" id="slotList"></div>
-        
-        <button id="logoutBtn" onclick="logout()">Logout</button>
+        <div id="main-section" style="display: none;">
+            <h2>Cafe Slot Manager</h2>
+            <h3>Settings</h3>
+            <input id="ringtone-file" type="file" accept="audio/*">
+            <button onclick="uploadRingtone()">Upload Custom Ringtone</button>
+            <p>Current Ringtone: <span id="current-ringtone">None</span></p>
+            <hr>
+            <h3>Start New Slot</h3>
+            <input id="table-name" placeholder="Table Name/Number">
+            <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
+            <input id="customer-name" placeholder="Customer Name">
+            <button onclick="startSlot()">Start 2-Hour Slot</button>
+            <hr>
+            <h3>Active Slots</h3>
+            <div id="slots"></div>
+        </div>
     </div>
-    
-    <audio id="alarmAudio" loop></audio>
 
     <script>
-        // Replace with your own Firebase config
-        const firebaseConfig = {
+        // Replace with your Firebase project config
+       const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -142,191 +88,161 @@
   measurementId: "G-KF4C2MGND1"
 };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const database = firebase.database();
+        const db = firebase.firestore();
         const storage = firebase.storage();
-        const slotsRef = database.ref('slots');
-        const ringtoneRef = database.ref('ringtone');
 
-        let ringtoneUrl = null;
-        const alarmAudio = document.getElementById('alarmAudio');
-        let alarmInterval;
+        let currentUser;
+        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3'; // Default ringtone URL (replace if needed)
+        let slots = {}; // Local cache of active slots
+        let timers = {}; // Timers for alarms
 
         // Auth state listener
         auth.onAuthStateChanged(user => {
+            currentUser = user;
             if (user) {
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('mainContainer').style.display = 'block';
-                loadRingtone().then(displaySlots);
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('main-section').style.display = 'block';
+                loadSettings();
+                loadSlots();
+                startUIUpdater();
             } else {
-                document.getElementById('loginContainer').style.display = 'block';
-                document.getElementById('mainContainer').style.display = 'none';
+                document.getElementById('login-section').style.display = 'block';
+                document.getElementById('main-section').style.display = 'none';
             }
         });
 
-        // Login function
+        // Signup with email
+        function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+        }
+
+        // Login with email
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, password)
-                .catch(error => alert(error.message));
+            auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
         }
 
-        // Signup function
-       function signup() {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-
-    if (!email || !password) {
-        alert("Please enter email and password");
-        return;
-    }
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            alert("Sign up successful! You can now log in.");
-            console.log("User created:", userCredential.user);
-        })
-        .catch((error) => {
-            console.error("Signup error:", error.code, error.message);
-            let msg = error.message;
-            if (error.code === 'auth/operation-not-allowed') {
-                msg = "Email/Password sign-up is not enabled in Firebase console.";
-            } else if (error.code === 'auth/weak-password') {
-                msg = "Password should be at least 6 characters.";
-            } else if (error.code === 'auth/email-already-in-use') {
-                msg = "This email is already registered. Please log in.";
-            }
-            alert("Sign up failed: " + msg);
-        });
-}
-        // Logout function
-        function logout() {
-            auth.signOut();
+        // Google login
+        function googleLogin() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => alert(error.message));
         }
 
-        // Load custom ringtone from DB
-        async function loadRingtone() {
-            const ringtoneSnapshot = await ringtoneRef.once('value');
-            if (ringtoneSnapshot.val()) {
-                ringtoneUrl = ringtoneSnapshot.val();
-                alarmAudio.src = ringtoneUrl;
-            }
-        }
-
-        // Upload new ringtone if selected
-        document.getElementById('ringtone').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const storageRef = storage.ref('ringtones/custom_ringtone');
-                const uploadTask = storageRef.put(file);
-                uploadTask.on('state_changed', null, error => alert(error.message), async () => {
-                    ringtoneUrl = await uploadTask.snapshot.ref.getDownloadURL();
-                    alarmAudio.src = ringtoneUrl;
-                    ringtoneRef.set(ringtoneUrl);
-                });
-            }
-        });
-
-        // Start a new slot
-        function startSlot() {
-            const tableName = document.getElementById('tableName').value.trim();
-            const mobileNumber = document.getElementById('mobileNumber').value.trim();
-            const customerName = document.getElementById('customerName').value.trim();
-
-            if (!tableName || !/^\d{10}$/.test(mobileNumber) || !customerName) {
-                alert('Please fill all fields correctly. Mobile must be 10 digits.');
-                return;
-            }
-
-            const startTime = Date.now();
-            const slotId = tableName.replace(/\s/g, '_');  // Simple ID from table name
-
-            slotsRef.child(slotId).set({
-                tableName,
-                mobileNumber,
-                customerName,
-                startTime
-            });
-
-            document.getElementById('tableName').value = '';
-            document.getElementById('mobileNumber').value = '';
-            document.getElementById('customerName').value = '';
-        }
-
-        // Renew slot
-        function renewSlot(slotId) {
-            slotsRef.child(slotId).update({ startTime: Date.now() });
-        }
-
-        // Remove slot
-        function removeSlot(slotId) {
-            slotsRef.child(slotId).remove();
-        }
-
-        // Display slots and check timers
-        function displaySlots() {
-            const slotList = document.getElementById('slotList');
-            slotList.innerHTML = '';
-
-            slotsRef.once('value').then(snapshot => {
-                let hasExpired = false;
-                snapshot.forEach(child => {
-                    const slotId = child.key;
-                    const slot = child.val();
-                    const elapsed = Date.now() - slot.startTime;
-                    const remaining = (2 * 60 * 60 * 1000) - elapsed;  // 2 hours in ms
-                    const timeLeft = remaining > 0 ? Math.floor(remaining / 60000) + ' min' : 'Expired';
-
-                    const div = document.createElement('div');
-                    div.className = 'slot-item';
-                    if (remaining <= 0) {
-                        div.classList.add('expired');
-                        hasExpired = true;
-                    }
-                    div.innerHTML = `
-                        <div>
-                            Table: ${slot.tableName}<br>
-                            Name: ${slot.customerName}<br>
-                            Mobile: ${slot.mobileNumber}<br>
-                            Time Left: ${timeLeft}
-                        </div>
-                        <div class="actions">
-                            <button class="renew-btn" onclick="renewSlot('${slotId}')">Renew</button>
-                            <button class="remove-btn" onclick="removeSlot('${slotId}')">Remove</button>
-                        </div>
-                    `;
-
-                    slotList.appendChild(div);
-                });
-
-                if (hasExpired && ringtoneUrl) {
-                    if (!alarmInterval) {
-                        alarmAudio.play();
-                        alarmInterval = setInterval(() => {
-                            displaySlots();  // Refresh to check
-                            if (!document.querySelector('.expired')) {
-                                alarmAudio.pause();
-                                clearInterval(alarmInterval);
-                                alarmInterval = null;
-                            }
-                        }, 10000);  // Check every 10s
-                    }
-                } else {
-                    alarmAudio.pause();
+        // Load settings (ringtone)
+        function loadSettings() {
+            db.collection('settings').doc(currentUser.uid).get().then(doc => {
+                if (doc.exists) {
+                    ringtoneUrl = doc.data().ringtone || ringtoneUrl;
+                    document.getElementById('current-ringtone').innerText = ringtoneUrl;
                 }
             });
         }
 
-        // Real-time listener for updates
-        slotsRef.on('value', displaySlots);
+        // Upload custom ringtone
+        function uploadRingtone() {
+            const file = document.getElementById('ringtone-file').files[0];
+            if (!file) return alert('Select a file first.');
+            const storageRef = storage.ref(`ringtones/${currentUser.uid}/${file.name}`);
+            storageRef.put(file).then(() => {
+                storageRef.getDownloadURL().then(url => {
+                    db.collection('settings').doc(currentUser.uid).set({ ringtone: url });
+                    ringtoneUrl = url;
+                    document.getElementById('current-ringtone').innerText = url;
+                    alert('Ringtone uploaded successfully!');
+                });
+            }).catch(error => alert(error.message));
+        }
 
-        // Refresh every minute to update times
-        setInterval(displaySlots, 60000);
+        // Start a new slot
+        function startSlot() {
+            const table = document.getElementById('table-name').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const name = document.getElementById('customer-name').value.trim();
+            if (!table || !name) return alert('Table and Name are required.');
+            if (mobile.length !== 10 || !/^\d+$/.test(mobile)) return alert('Mobile must be exactly 10 digits.');
+            
+            const now = new Date();
+            const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+
+            db.collection('slots').add({
+                userId: currentUser.uid,
+                table,
+                mobile,
+                name,
+                start: firebase.firestore.Timestamp.fromDate(now),
+                end: firebase.firestore.Timestamp.fromDate(endTime)
+            }).then(() => {
+                document.getElementById('table-name').value = '';
+                document.getElementById('mobile').value = '';
+                document.getElementById('customer-name').value = '';
+            }).catch(error => alert(error.message));
+        }
+
+        // Load slots in real-time
+        function loadSlots() {
+            db.collection('slots')
+                .where('userId', '==', currentUser.uid)
+                .where('end', '>', firebase.firestore.Timestamp.now())
+                .onSnapshot(snapshot => {
+                    slots = {};
+                    snapshot.forEach(doc => {
+                        slots[doc.id] = doc.data();
+                        setupTimer(doc.id, slots[doc.id]);
+                    });
+                    updateSlotsUI(); // Initial UI update
+                });
+        }
+
+        // Setup alarm timer for each slot
+        function setupTimer(slotId, slotData) {
+            if (timers[slotId]) clearTimeout(timers[slotId]);
+            const now = new Date();
+            const msLeft = slotData.end.toDate() - now;
+            if (msLeft > 0) {
+                timers[slotId] = setTimeout(() => {
+                    playAlarm();
+                    alert(`Reminder: Slot for Table ${slotData.table} (${slotData.name}) has expired! Time to renew.`);
+                    delete timers[slotId]; // Clean up
+                }, msLeft);
+            }
+        }
+
+        // Play alarm sound
+        function playAlarm() {
+            const audio = new Audio(ringtoneUrl);
+            audio.play().catch(error => console.error('Error playing audio:', error));
+        }
+
+        // UI updater interval (every 10 seconds)
+        function startUIUpdater() {
+            setInterval(updateSlotsUI, 10000);
+        }
+
+        // Update slots UI with remaining time
+        function updateSlotsUI() {
+            const slotsDiv = document.getElementById('slots');
+            slotsDiv.innerHTML = '';
+            const now = new Date();
+            for (let id in slots) {
+                const data = slots[id];
+                const msLeft = data.end.toDate() - now;
+                let remaining = Math.floor(msLeft / 60000); // minutes
+                let status = `${remaining} minutes remaining`;
+                if (msLeft <= 0) {
+                    status = 'Expired';
+                    // Optionally remove from local slots if needed, but keep for reference
+                }
+                const slotItem = document.createElement('div');
+                slotItem.className = 'slot-item';
+                slotItem.innerHTML = `Table ${data.table}: ${data.name} (${data.mobile}) - ${status}`;
+                slotsDiv.appendChild(slotItem);
+            }
+        }
     </script>
 </body>
 </html>
-
-
