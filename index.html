@@ -3,129 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cafe Slot Timer • Cloud</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-app-compat.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.3.0/firebase-firestore-compat.min.js"></script>
+    <title>Cafe Slot Manager</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .slot-card { transition: all 0.2s; }
-        .slot-card.overdue { animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-        .timer { font-feature-settings: "tnum"; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+        }
+        .form-container, .login-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="email"], input[type="password"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .slot-list {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .slot-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slot-item:last-child {
+            border-bottom: none;
+        }
+        .expired {
+            color: red;
+            font-weight: bold;
+        }
+        .actions button {
+            width: auto;
+            margin-left: 10px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+        .renew-btn {
+            background-color: #2196F3;
+        }
+        .renew-btn:hover {
+            background-color: #1E88E5;
+        }
+        .remove-btn {
+            background-color: #f44336;
+        }
+        .remove-btn:hover {
+            background-color: #d32f2f;
+        }
+        #logoutBtn {
+            width: auto;
+            background-color: #f44336;
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .slot-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .actions {
+                margin-top: 10px;
+            }
+        }
     </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js"></script>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen">
-    <div class="max-w-5xl mx-auto p-6">
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-8 border-b border-zinc-800 pb-6">
-            <div>
-                <h1 class="text-4xl font-semibold tracking-tight">☕ Cafe Slot Timer</h1>
-                <p class="text-zinc-400 mt-1">2-hour work slots • Real-time cloud sync</p>
-            </div>
-            <div class="flex items-center gap-4">
-                <div onclick="stopAllAlarms()" class="cursor-pointer bg-red-600 hover:bg-red-700 px-5 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
-                    <span id="alarmStatus" class="text-xs bg-red-500/30 px-2 py-0.5 rounded">ALARM READY</span>
-                    STOP ALARM
-                </div>
-                <button onclick="showSettings()" 
-                        class="bg-zinc-800 hover:bg-zinc-700 px-5 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
-                    ⚙️ Settings
-                </button>
-            </div>
-        </div>
-
-        <!-- Add New Slot -->
-        <div class="bg-zinc-900 rounded-3xl p-8 mb-10">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Table Name</label>
-                    <input id="tableInput" 
-                           class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-500 rounded-2xl px-5 py-4 text-lg outline-none"
-                           placeholder="T01 or Window-2" maxlength="20">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Customer Name</label>
-                    <input id="nameInput" 
-                           class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-500 rounded-2xl px-5 py-4 text-lg outline-none"
-                           placeholder="Rahul Sharma">
-                </div>
-                <div>
-                    <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-1">Mobile Number</label>
-                    <input id="mobileInput" type="tel" maxlength="10"
-                           class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-500 rounded-2xl px-5 py-4 text-lg outline-none"
-                           placeholder="9876543210">
-                </div>
-                <div class="flex items-end">
-                    <button onclick="startNewSlot()" 
-                            class="w-full bg-emerald-600 hover:bg-emerald-500 transition font-semibold text-xl py-4 rounded-3xl flex items-center justify-center gap-3">
-                        <span>START 2-HOUR SLOT</span>
-                        <span class="text-2xl">→</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Active Slots -->
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-2xl font-medium">Active Slots <span id="count" class="text-emerald-400 text-xl">0</span></h2>
-            <div class="text-xs text-zinc-500">Auto alarm when time ends • Renew or Complete anytime</div>
-        </div>
-
-        <div id="slotsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Populated by JS -->
-        </div>
-
-        <!-- Empty state -->
-        <div id="emptyState" class="hidden text-center py-20">
-            <div class="mx-auto w-24 h-24 bg-zinc-800 rounded-3xl flex items-center justify-center text-5xl mb-6">☕</div>
-            <p class="text-2xl text-zinc-400">No active slots yet</p>
-            <p class="text-zinc-500 mt-2">Add one above to start timing</p>
-        </div>
+<body>
+    <h1>Cafe Slot Manager</h1>
+    
+    <div id="loginContainer" class="login-container">
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="login()">Login</button>
+        <button onclick="signup()" style="background-color: #2196F3; margin-top: 10px;">Sign Up</button>
     </div>
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div class="bg-zinc-900 rounded-3xl max-w-md w-full mx-4 overflow-hidden">
-            <div class="p-8">
-                <h3 class="text-2xl font-semibold mb-6">Settings</h3>
-                
-                <div class="mb-8">
-                    <label class="block text-sm text-zinc-400 mb-3">Custom Ringtone (upload MP3/WAV/OGG)</label>
-                    <div class="flex gap-3">
-                        <input type="file" id="ringtoneFile" accept="audio/*" class="hidden">
-                        <button onclick="document.getElementById('ringtoneFile').click()" 
-                                class="flex-1 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl py-4 text-sm font-medium">
-                            Choose Audio File
-                        </button>
-                        <button onclick="resetToDefaultRingtone()" 
-                                class="px-6 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl text-sm">
-                            Reset to Default
-                        </button>
-                    </div>
-                    <p id="currentRingtoneName" class="mt-3 text-sm text-emerald-400">Default Beep Alarm (loud periodic beep)</p>
-                </div>
-
-                <div class="text-xs text-zinc-500 border-t border-zinc-800 pt-6">
-                    <p class="mb-2">• Data is stored in the cloud (Firebase) – works on any device</p>
-                    <p class="mb-2">• Timers are accurate across all devices</p>
-                    <p>• Alarm plays on this browser when any slot expires</p>
-                </div>
-            </div>
-            
-            <div class="border-t border-zinc-800 p-4 flex gap-3">
-                <button onclick="closeSettings()" 
-                        class="flex-1 py-4 text-zinc-400 hover:text-white font-medium">Close</button>
-                <button onclick="saveSettingsAndClose()" 
-                        class="flex-1 bg-white text-zinc-950 py-4 rounded-2xl font-semibold">Save & Close</button>
-            </div>
+    
+    <div id="mainContainer" style="display: none;">
+        <div class="form-container">
+            <input type="text" id="tableName" placeholder="Table Name/Number" required>
+            <input type="text" id="mobileNumber" placeholder="10-Digit Mobile Number" pattern="\d{10}" required>
+            <input type="text" id="customerName" placeholder="Customer Name" required>
+            <input type="file" id="ringtone" accept="audio/*">
+            <button onclick="startSlot()">Start Slot</button>
         </div>
+        
+        <div class="slot-list" id="slotList"></div>
+        
+        <button id="logoutBtn" onclick="logout()">Logout</button>
     </div>
+    
+    <audio id="alarmAudio" loop></audio>
 
     <script>
-        // ============== FIREBASE CONFIG - REPLACE WITH YOURS ==============
-       const firebaseConfig = {
+        // Replace with your own Firebase config
+        const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -134,366 +141,170 @@
   appId: "1:359938483000:web:bc9fa519fed44321a257cd",
   measurementId: "G-KF4C2MGND1"
 };
-        // =================================================================
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const slotsRef = db.collection("cafe_slots");
+        const auth = firebase.auth();
+        const database = firebase.database();
+        const storage = firebase.storage();
+        const slotsRef = database.ref('slots');
+        const ringtoneRef = database.ref('ringtone');
 
-        // Variables
-        let slots = [];
-        let alarmAudio = null;
-        let useCustomSound = false;
-        let audioContext = null;
-        let currentAlarmInterval = null;
-        let isAlarming = false;
+        let ringtoneUrl = null;
+        const alarmAudio = document.getElementById('alarmAudio');
+        let alarmInterval;
 
-        // Tailwind script already loaded
-
-        function initTailwind() {
-            // Already done via CDN
-        }
-
-        // Load custom ringtone from localStorage
-        function loadCustomRingtone() {
-            const saved = localStorage.getItem("customAlarmData");
-            if (saved) {
-                alarmAudio = new Audio(saved);
-                useCustomSound = true;
-                document.getElementById("currentRingtoneName").textContent = "Custom uploaded ringtone";
+        // Auth state listener
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('mainContainer').style.display = 'block';
+                loadRingtone().then(displaySlots);
             } else {
-                alarmAudio = null;
-                useCustomSound = false;
-                document.getElementById("currentRingtoneName").textContent = "Default Beep Alarm (loud periodic beep)";
+                document.getElementById('loginContainer').style.display = 'block';
+                document.getElementById('mainContainer').style.display = 'none';
+            }
+        });
+
+        // Login function
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(error => alert(error.message));
+        }
+
+        // Signup function
+        function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.createUserWithEmailAndPassword(email, password)
+                .catch(error => alert(error.message));
+        }
+
+        // Logout function
+        function logout() {
+            auth.signOut();
+        }
+
+        // Load custom ringtone from DB
+        async function loadRingtone() {
+            const ringtoneSnapshot = await ringtoneRef.once('value');
+            if (ringtoneSnapshot.val()) {
+                ringtoneUrl = ringtoneSnapshot.val();
+                alarmAudio.src = ringtoneUrl;
             }
         }
 
-        // Play alarm sound (once per expiration)
-        function playAlarmSound(tableName) {
-            if (isAlarming) return;
-            isAlarming = true;
-            document.getElementById("alarmStatus").textContent = "ALARMING";
-            document.getElementById("alarmStatus").classList.add("animate-pulse");
+        // Upload new ringtone if selected
+        document.getElementById('ringtone').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const storageRef = storage.ref('ringtones/custom_ringtone');
+                const uploadTask = storageRef.put(file);
+                uploadTask.on('state_changed', null, error => alert(error.message), async () => {
+                    ringtoneUrl = await uploadTask.snapshot.ref.getDownloadURL();
+                    alarmAudio.src = ringtoneUrl;
+                    ringtoneRef.set(ringtoneUrl);
+                });
+            }
+        });
 
-            if (useCustomSound && alarmAudio) {
-                alarmAudio.currentTime = 0;
-                alarmAudio.play().catch(() => {});
-                // Stop after 15 seconds if not stopped manually
-                setTimeout(() => {
-                    if (isAlarming) stopAllAlarms();
-                }, 15000);
-            } else {
-                // Default loud periodic beep
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                currentAlarmInterval = setInterval(() => {
-                    beep(900, 280);
-                    setTimeout(() => beep(650, 180), 380);
-                }, 720);
-                // Auto stop after 15s
-                setTimeout(() => {
-                    if (isAlarming) stopAllAlarms();
-                }, 15000);
+        // Start a new slot
+        function startSlot() {
+            const tableName = document.getElementById('tableName').value.trim();
+            const mobileNumber = document.getElementById('mobileNumber').value.trim();
+            const customerName = document.getElementById('customerName').value.trim();
+
+            if (!tableName || !/^\d{10}$/.test(mobileNumber) || !customerName) {
+                alert('Please fill all fields correctly. Mobile must be 10 digits.');
+                return;
             }
 
-            // Toast
-            showToast(`⏰ TIME UP for ${tableName}! Please renew or complete.`, "red");
-        }
+            const startTime = Date.now();
+            const slotId = tableName.replace(/\s/g, '_');  // Simple ID from table name
 
-        function beep(freq, duration) {
-            if (!audioContext) return;
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
-            osc.frequency.value = freq;
-            osc.type = "sawtooth";
-            gain.gain.value = 0.6;
-            osc.start();
-            setTimeout(() => {
-                osc.stop();
-            }, duration);
-        }
-
-        function stopAllAlarms() {
-            isAlarming = false;
-            document.getElementById("alarmStatus").textContent = "ALARM READY";
-            document.getElementById("alarmStatus").classList.remove("animate-pulse");
-            
-            if (alarmAudio) {
-                alarmAudio.pause();
-                alarmAudio.currentTime = 0;
-            }
-            if (currentAlarmInterval) {
-                clearInterval(currentAlarmInterval);
-                currentAlarmInterval = null;
-            }
-        }
-
-        // Show toast
-        function showToast(message, color = "emerald") {
-            const toast = document.createElement("div");
-            toast.className = `fixed bottom-6 right-6 bg-zinc-900 border border-${color}-600 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3 z-50`;
-            toast.innerHTML = `
-                <span class="text-2xl">${color === "red" ? "⏰" : "✅"}</span>
-                <span>${message}</span>
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.style.transition = "all 0.4s";
-                toast.style.opacity = "0";
-                setTimeout(() => toast.remove(), 400);
-            }, 6500);
-        }
-
-        // Render all active slots
-        function renderSlots() {
-            const container = document.getElementById("slotsContainer");
-            container.innerHTML = "";
-            
-            const activeSlots = slots.filter(s => s.status === "active");
-            document.getElementById("count").textContent = activeSlots.length;
-            document.getElementById("emptyState").classList.toggle("hidden", activeSlots.length > 0);
-
-            activeSlots.forEach(slot => {
-                const now = Date.now();
-                const remainingMs = slot.endTime - now;
-                const isOverdue = remainingMs <= 0;
-
-                const hours = Math.max(0, Math.floor(remainingMs / 3600000));
-                const mins = Math.max(0, Math.floor((remainingMs % 3600000) / 60000));
-                const secs = Math.max(0, Math.floor((remainingMs % 60000) / 1000));
-
-                const card = document.createElement("div");
-                card.className = `slot-card bg-zinc-900 border ${isOverdue ? "border-red-600 overdue" : "border-zinc-700"} rounded-3xl p-6`;
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="text-4xl font-mono font-bold text-emerald-400">${slot.table}</div>
-                            <div class="text-xl mt-1">${slot.customer}</div>
-                            <div class="text-zinc-400 text-sm mt-0.5">${slot.mobile}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-xs uppercase tracking-widest ${isOverdue ? 'text-red-400' : 'text-zinc-500'}">ENDS</div>
-                            <div class="text-xs font-mono text-zinc-400">${new Date(slot.endTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-8 bg-zinc-950 rounded-2xl p-4 text-center">
-                        <div id="timer-${slot.id}" class="timer text-5xl font-mono font-semibold ${isOverdue ? 'text-red-500' : 'text-white'}">
-                            ${isOverdue ? 'OVERDUE' : `${hours}h ${mins}m ${secs}s`}
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 mt-8">
-                        <button onclick="renewSlot('${slot.id}')" 
-                                class="bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl text-sm font-semibold transition">
-                            RENEW +2 HOURS
-                        </button>
-                        <button onclick="completeSlot('${slot.id}')" 
-                                class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 py-4 rounded-2xl text-sm font-semibold transition">
-                            MARK COMPLETE
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
+            slotsRef.child(slotId).set({
+                tableName,
+                mobileNumber,
+                customerName,
+                startTime
             });
-        }
 
-        // Update timers live
-        function startTimerUpdater() {
-            setInterval(() => {
-                const activeSlots = slots.filter(s => s.status === "active");
-                activeSlots.forEach(slot => {
-                    const timerEl = document.getElementById(`timer-${slot.id}`);
-                    if (!timerEl) return;
-
-                    const now = Date.now();
-                    const rem = slot.endTime - now;
-
-                    if (rem <= 0) {
-                        timerEl.textContent = "OVERDUE";
-                        timerEl.classList.add("text-red-500");
-
-                        // Trigger alarm if not yet alerted
-                        if (!slot.alerted) {
-                            slots.find(s => s.id === slot.id).alerted = true;
-                            // Update in Firestore
-                            slotsRef.doc(slot.id).update({
-                                alerted: true
-                            });
-                            playAlarmSound(slot.table);
-                        }
-                    } else {
-                        const h = Math.floor(rem / 3600000);
-                        const m = Math.floor((rem % 3600000) / 60000);
-                        const s = Math.floor((rem % 60000) / 1000);
-                        timerEl.textContent = `${h}h ${m}m ${s}s`;
-                        timerEl.classList.remove("text-red-500");
-                    }
-                });
-            }, 1000);
-        }
-
-        // Load slots from Firestore (real-time)
-        function listenToSlots() {
-            slotsRef.where("status", "==", "active")
-                .onSnapshot((snapshot) => {
-                    slots = [];
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        slots.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    });
-                    renderSlots();
-                });
-        }
-
-        // Start new slot
-        async function startNewSlot() {
-            const table = document.getElementById("tableInput").value.trim().toUpperCase();
-            const customer = document.getElementById("nameInput").value.trim();
-            let mobile = document.getElementById("mobileInput").value.trim();
-
-            if (!table || !customer || mobile.length !== 10 || !/^\d{10}$/.test(mobile)) {
-                showToast("Please fill all fields correctly (10-digit mobile)", "red");
-                return;
-            }
-
-            // Check if table already active
-            const existing = slots.find(s => s.table === table && s.status === "active");
-            if (existing) {
-                showToast(`Table ${table} is already occupied!`, "red");
-                return;
-            }
-
-            const now = Date.now();
-            const endTime = now + (2 * 60 * 60 * 1000); // 2 hours
-
-            try {
-                await slotsRef.add({
-                    table: table,
-                    customer: customer,
-                    mobile: mobile,
-                    startTime: now,
-                    endTime: endTime,
-                    status: "active",
-                    alerted: false,
-                    createdAt: now
-                });
-
-                // Clear form
-                document.getElementById("tableInput").value = "";
-                document.getElementById("nameInput").value = "";
-                document.getElementById("mobileInput").value = "";
-
-                showToast(`Slot started for ${table} — 2 hours running!`);
-            } catch (e) {
-                showToast("Error saving to cloud. Check internet.", "red");
-                console.error(e);
-            }
+            document.getElementById('tableName').value = '';
+            document.getElementById('mobileNumber').value = '';
+            document.getElementById('customerName').value = '';
         }
 
         // Renew slot
-        async function renewSlot(id) {
-            const now = Date.now();
-            const newEnd = now + (2 * 60 * 60 * 1000);
+        function renewSlot(slotId) {
+            slotsRef.child(slotId).update({ startTime: Date.now() });
+        }
 
-            try {
-                await slotsRef.doc(id).update({
-                    endTime: newEnd,
-                    alerted: false
+        // Remove slot
+        function removeSlot(slotId) {
+            slotsRef.child(slotId).remove();
+        }
+
+        // Display slots and check timers
+        function displaySlots() {
+            const slotList = document.getElementById('slotList');
+            slotList.innerHTML = '';
+
+            slotsRef.once('value').then(snapshot => {
+                let hasExpired = false;
+                snapshot.forEach(child => {
+                    const slotId = child.key;
+                    const slot = child.val();
+                    const elapsed = Date.now() - slot.startTime;
+                    const remaining = (2 * 60 * 60 * 1000) - elapsed;  // 2 hours in ms
+                    const timeLeft = remaining > 0 ? Math.floor(remaining / 60000) + ' min' : 'Expired';
+
+                    const div = document.createElement('div');
+                    div.className = 'slot-item';
+                    if (remaining <= 0) {
+                        div.classList.add('expired');
+                        hasExpired = true;
+                    }
+                    div.innerHTML = `
+                        <div>
+                            Table: ${slot.tableName}<br>
+                            Name: ${slot.customerName}<br>
+                            Mobile: ${slot.mobileNumber}<br>
+                            Time Left: ${timeLeft}
+                        </div>
+                        <div class="actions">
+                            <button class="renew-btn" onclick="renewSlot('${slotId}')">Renew</button>
+                            <button class="remove-btn" onclick="removeSlot('${slotId}')">Remove</button>
+                        </div>
+                    `;
+
+                    slotList.appendChild(div);
                 });
-                showToast("Slot renewed for another 2 hours ✓");
-            } catch (e) {
-                showToast("Failed to renew", "red");
-            }
-        }
 
-        // Complete slot (archive)
-        async function completeSlot(id) {
-            if (!confirm("Mark this slot as completed?")) return;
-            
-            try {
-                await slotsRef.doc(id).update({
-                    status: "completed"
-                });
-                showToast("Slot completed and archived");
-            } catch (e) {
-                showToast("Failed to complete", "red");
-            }
-        }
-
-        // Settings modal
-        function showSettings() {
-            document.getElementById("settingsModal").classList.remove("hidden");
-            document.getElementById("ringtoneFile").onchange = handleRingtoneUpload;
-        }
-
-        function closeSettings() {
-            document.getElementById("settingsModal").classList.add("hidden");
-        }
-
-        function saveSettingsAndClose() {
-            closeSettings();
-        }
-
-        function handleRingtoneUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (!file.type.startsWith("audio/")) {
-                showToast("Please upload an audio file only", "red");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                localStorage.setItem("customAlarmData", ev.target.result);
-                loadCustomRingtone(); // reload
-                showToast("Custom ringtone saved! Will play on next alarm.");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function resetToDefaultRingtone() {
-            localStorage.removeItem("customAlarmData");
-            loadCustomRingtone();
-            showToast("Reset to default beep alarm");
-        }
-
-        // Main init
-        function initializeApp() {
-            if (!firebaseConfig.apiKey.includes("YOUR_API_KEY")) {
-                // Firebase is configured
-                listenToSlots();
-                startTimerUpdater();
-                loadCustomRingtone();
-                showToast("Connected to cloud • Ready to manage slots", "emerald");
-            } else {
-                alert("⚠️ Please replace the firebaseConfig object in the code with your own Firebase config!");
-            }
-        }
-
-        // Keyboard shortcut: Enter in mobile field starts slot
-        document.addEventListener("DOMContentLoaded", () => {
-            initializeApp();
-            
-            const mobileField = document.getElementById("mobileInput");
-            mobileField.addEventListener("keypress", (e) => {
-                if (e.key === "Enter") startNewSlot();
+                if (hasExpired && ringtoneUrl) {
+                    if (!alarmInterval) {
+                        alarmAudio.play();
+                        alarmInterval = setInterval(() => {
+                            displaySlots();  // Refresh to check
+                            if (!document.querySelector('.expired')) {
+                                alarmAudio.pause();
+                                clearInterval(alarmInterval);
+                                alarmInterval = null;
+                            }
+                        }, 10000);  // Check every 10s
+                    }
+                } else {
+                    alarmAudio.pause();
+                }
             });
-        });
+        }
 
-        // Expose functions to window for onclick
-        window.startNewSlot = startNewSlot;
-        window.renewSlot = renewSlot;
-        window.completeSlot = completeSlot;
-        window.showSettings = showSettings;
-        window.closeSettings = closeSettings;
-        window.saveSettingsAndClose = saveSettingsAndClose;
-        window.stopAllAlarms = stopAllAlarms;
+        // Real-time listener for updates
+        slotsRef.on('value', displaySlots);
+
+        // Refresh every minute to update times
+        setInterval(displaySlots, 60000);
     </script>
 </body>
 </html>
