@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cafe Slot Manager</title>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js"></script>
+
+    <!-- Firebase Compat SDKs (these work with plain <script> tags) -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,59 +27,81 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         input, button {
-            margin: 5px 0;
-            padding: 8px;
+            margin: 8px 0;
+            padding: 10px;
             width: 100%;
             box-sizing: border-box;
+            font-size: 16px;
         }
         button {
-            width: auto;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
             cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         #slots {
             margin-top: 20px;
         }
         .slot-item {
             border-bottom: 1px solid #ddd;
-            padding: 10px 0;
+            padding: 12px 0;
+            font-size: 15px;
+        }
+        .expired {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        hr {
+            margin: 25px 0;
         }
         @media (max-width: 600px) {
-            .container {
-                padding: 10px;
-            }
+            body { padding: 10px; }
+            .container { padding: 15px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div id="login-section">
-            <h2>Login or Signup</h2>
-            <input id="email" type="email" placeholder="Email">
-            <input id="password" type="password" placeholder="Password">
-            <button onclick="signup()">Signup with Email</button>
+            <h2>Login or Sign Up</h2>
+            <input id="email" type="email" placeholder="Email" required>
+            <input id="password" type="password" placeholder="Password" required>
+            <button onclick="signup()">Sign Up with Email</button>
             <button onclick="login()">Login with Email</button>
             <button onclick="googleLogin()">Login with Google</button>
         </div>
+
         <div id="main-section" style="display: none;">
             <h2>Cafe Slot Manager</h2>
-            <h3>Settings</h3>
+
+            <h3>Custom Ringtone (optional)</h3>
             <input id="ringtone-file" type="file" accept="audio/*">
-            <button onclick="uploadRingtone()">Upload Custom Ringtone</button>
-            <p>Current Ringtone: <span id="current-ringtone">None</span></p>
+            <button onclick="uploadRingtone()">Upload Ringtone</button>
+            <p>Current: <span id="current-ringtone">Default beep</span></p>
+
             <hr>
-            <h3>Start New Slot</h3>
-            <input id="table-name" placeholder="Table Name/Number">
+
+            <h3>Start New 2-Hour Slot</h3>
+            <input id="table-name" placeholder="Table Name / Number" required>
             <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
-            <input id="customer-name" placeholder="Customer Name">
-            <button onclick="startSlot()">Start 2-Hour Slot</button>
+            <input id="customer-name" placeholder="Customer Name" required>
+            <button onclick="startSlot()">Start Slot</button>
+
             <hr>
+
             <h3>Active Slots</h3>
             <div id="slots"></div>
         </div>
     </div>
 
     <script>
-        // Replace with your Firebase project config
+        // ────────────────────────────────────────────────
+        //  REPLACE WITH YOUR OWN FIREBASE CONFIG
+        // ────────────────────────────────────────────────
        const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
@@ -88,17 +112,19 @@
   measurementId: "G-KF4C2MGND1"
 };
 
+
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
 
         let currentUser;
-        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3'; // Default ringtone URL (replace if needed)
-        let slots = {}; // Local cache of active slots
-        let timers = {}; // Timers for alarms
+        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3'; // fallback
+        let slots = {};     // local cache
+        let timers = {};    // alarm timeouts
 
-        // Auth state listener
+        // Listen for auth changes
         auth.onAuthStateChanged(user => {
             currentUser = user;
             if (user) {
@@ -113,134 +139,148 @@
             }
         });
 
-        // Signup with email
         function signup() {
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            auth.createUserWithEmailAndPassword(email, password).catch(error => alert(error.message));
+            if (!email || !password) return alert("Email and password required");
+            auth.createUserWithEmailAndPassword(email, password)
+                .catch(err => alert(err.message));
         }
 
-        // Login with email
         function login() {
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(email, password).catch(error => alert(error.message));
+            if (!email || !password) return alert("Email and password required");
+            auth.signInWithEmailAndPassword(email, password)
+                .catch(err => alert(err.message));
         }
 
-        // Google login
         function googleLogin() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => alert(error.message));
+            auth.signInWithPopup(provider)
+                .catch(err => alert(err.message));
         }
 
-        // Load settings (ringtone)
         function loadSettings() {
-            db.collection('settings').doc(currentUser.uid).get().then(doc => {
-                if (doc.exists) {
-                    ringtoneUrl = doc.data().ringtone || ringtoneUrl;
-                    document.getElementById('current-ringtone').innerText = ringtoneUrl;
-                }
-            });
+            db.collection('settings').doc(currentUser.uid).get()
+                .then(doc => {
+                    if (doc.exists && doc.data().ringtone) {
+                        ringtoneUrl = doc.data().ringtone;
+                        document.getElementById('current-ringtone').innerText = "Custom uploaded";
+                    }
+                })
+                .catch(err => console.error(err));
         }
 
-        // Upload custom ringtone
         function uploadRingtone() {
             const file = document.getElementById('ringtone-file').files[0];
-            if (!file) return alert('Select a file first.');
+            if (!file) return alert("Please select an audio file first");
+
             const storageRef = storage.ref(`ringtones/${currentUser.uid}/${file.name}`);
-            storageRef.put(file).then(() => {
-                storageRef.getDownloadURL().then(url => {
-                    db.collection('settings').doc(currentUser.uid).set({ ringtone: url });
+            storageRef.put(file)
+                .then(() => storageRef.getDownloadURL())
+                .then(url => {
+                    db.collection('settings').doc(currentUser.uid).set({ ringtone: url }, { merge: true });
                     ringtoneUrl = url;
-                    document.getElementById('current-ringtone').innerText = url;
-                    alert('Ringtone uploaded successfully!');
-                });
-            }).catch(error => alert(error.message));
+                    document.getElementById('current-ringtone').innerText = "Custom uploaded";
+                    alert("Ringtone uploaded!");
+                })
+                .catch(err => alert("Upload failed: " + err.message));
         }
 
-        // Start a new slot
         function startSlot() {
             const table = document.getElementById('table-name').value.trim();
             const mobile = document.getElementById('mobile').value.trim();
-            const name = document.getElementById('customer-name').value.trim();
-            if (!table || !name) return alert('Table and Name are required.');
-            if (mobile.length !== 10 || !/^\d+$/.test(mobile)) return alert('Mobile must be exactly 10 digits.');
-            
+            const name   = document.getElementById('customer-name').value.trim();
+
+            if (!table || !name) return alert("Table and Name are required");
+            if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
+                return alert("Mobile number must be exactly 10 digits");
+            }
+
             const now = new Date();
-            const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
+            const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
             db.collection('slots').add({
                 userId: currentUser.uid,
                 table,
-                mobile,
+                mobile: mobile || null,
                 name,
                 start: firebase.firestore.Timestamp.fromDate(now),
-                end: firebase.firestore.Timestamp.fromDate(endTime)
-            }).then(() => {
+                end:   firebase.firestore.Timestamp.fromDate(end)
+            })
+            .then(() => {
                 document.getElementById('table-name').value = '';
                 document.getElementById('mobile').value = '';
                 document.getElementById('customer-name').value = '';
-            }).catch(error => alert(error.message));
+            })
+            .catch(err => alert("Error starting slot: " + err.message));
         }
 
-        // Load slots in real-time
         function loadSlots() {
             db.collection('slots')
                 .where('userId', '==', currentUser.uid)
                 .where('end', '>', firebase.firestore.Timestamp.now())
-                .onSnapshot(snapshot => {
+                .onSnapshot(snap => {
                     slots = {};
-                    snapshot.forEach(doc => {
+                    snap.forEach(doc => {
                         slots[doc.id] = doc.data();
                         setupTimer(doc.id, slots[doc.id]);
                     });
-                    updateSlotsUI(); // Initial UI update
-                });
+                    updateSlotsUI();
+                }, err => console.error("Slots listener error:", err));
         }
 
-        // Setup alarm timer for each slot
         function setupTimer(slotId, slotData) {
             if (timers[slotId]) clearTimeout(timers[slotId]);
-            const now = new Date();
-            const msLeft = slotData.end.toDate() - now;
+
+            const msLeft = slotData.end.toDate() - Date.now();
             if (msLeft > 0) {
                 timers[slotId] = setTimeout(() => {
                     playAlarm();
-                    alert(`Reminder: Slot for Table ${slotData.table} (${slotData.name}) has expired! Time to renew.`);
-                    delete timers[slotId]; // Clean up
+                    alert(`Slot expired! Table ${slotData.table} - ${slotData.name}`);
+                    delete timers[slotId];
                 }, msLeft);
             }
         }
 
-        // Play alarm sound
         function playAlarm() {
             const audio = new Audio(ringtoneUrl);
-            audio.play().catch(error => console.error('Error playing audio:', error));
+            audio.play().catch(e => console.warn("Audio play failed (autoplay policy?):", e));
         }
 
-        // UI updater interval (every 10 seconds)
         function startUIUpdater() {
-            setInterval(updateSlotsUI, 10000);
+            setInterval(updateSlotsUI, 15000); // refresh display every 15s
         }
 
-        // Update slots UI with remaining time
         function updateSlotsUI() {
-            const slotsDiv = document.getElementById('slots');
-            slotsDiv.innerHTML = '';
-            const now = new Date();
-            for (let id in slots) {
-                const data = slots[id];
+            const container = document.getElementById('slots');
+            container.innerHTML = '';
+            const now = Date.now();
+
+            Object.entries(slots).forEach(([id, data]) => {
                 const msLeft = data.end.toDate() - now;
-                let remaining = Math.floor(msLeft / 60000); // minutes
-                let status = `${remaining} minutes remaining`;
+                let status = '';
+                let className = '';
+
                 if (msLeft <= 0) {
                     status = 'Expired';
-                    // Optionally remove from local slots if needed, but keep for reference
+                    className = 'expired';
+                } else {
+                    const mins = Math.floor(msLeft / 60000);
+                    const hours = Math.floor(mins / 60);
+                    const remMins = mins % 60;
+                    status = hours > 0 ? `${hours}h ${remMins}m left` : `${mins}m left`;
                 }
-                const slotItem = document.createElement('div');
-                slotItem.className = 'slot-item';
-                slotItem.innerHTML = `Table ${data.table}: ${data.name} (${data.mobile}) - ${status}`;
-                slotsDiv.appendChild(slotItem);
+
+                const div = document.createElement('div');
+                div.className = 'slot-item ' + className;
+                div.innerHTML = `Table <b>${data.table}</b> • ${data.name || '—'} • ${data.mobile || '—'} • ${status}`;
+                container.appendChild(div);
+            });
+
+            if (Object.keys(slots).length === 0) {
+                container.innerHTML = '<p style="color:#777;">No active slots right now.</p>';
             }
         }
     </script>
