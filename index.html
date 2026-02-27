@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe Table Slot Manager</title>
+    <script src="https://www.gstatic.com"></script>
+    <script src="https://www.gstatic.com"></script>
+    <style>
+        :root { --primary: #28a745; --danger: #dc3545; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { display: flex; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .sidebar { width: 300px; }
+        .grid { flex-grow: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .table-card { border-top: 5px solid var(--primary); text-align: center; }
+        .table-card.expired { border-color: var(--danger); background: #fff5f5; animation: blink 1s infinite; }
+        .timer { font-size: 1.5rem; font-weight: bold; margin: 10px 0; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Registration Sidebar -->
+    <div class="card sidebar">
+        <h2>Register Table</h2>
+        <input type="text" id="tableName" placeholder="Table Name/Number (e.g., T-12)">
+        <input type="text" id="custName" placeholder="Customer Name">
+        <input type="text" id="mobile" placeholder="Mobile (10 Digits)">
+        <label>Custom Alarm:</label>
+        <input type="file" id="alarmSound" accept="audio/*">
+        <button onclick="startSlot()">START TIMER</button>
+    </div>
+
+    <!-- Active Slots Grid -->
+    <div class="grid" id="slotsGrid"></div>
+</div>
+
+<audio id="audioPlayer" loop></audio>
+
+<script>
+    // 1. REPLACE THIS WITH YOUR FIREBASE CONFIG
+   const firebaseConfig = {
+  apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
+  authDomain: "gp-workspace-manager.firebaseapp.com",
+  projectId: "gp-workspace-manager",
+  storageBucket: "gp-workspace-manager.firebasestorage.app",
+  messagingSenderId: "359938483000",
+  appId: "1:359938483000:web:bc9fa519fed44321a257cd",
+  measurementId: "G-KF4C2MGND1"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('slots');
+    let customAudioURL = "";
+
+    // Handle audio upload
+    document.getElementById('alarmSound').addEventListener('change', function(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => customAudioURL = event.target.result;
+        reader.readAsDataURL(e.target.files[0]);
+    });
+
+    // Start New Slot
+    function startSlot() {
+        const name = document.getElementById('tableName').value;
+        const customer = document.getElementById('custName').value;
+        if(!name) return alert("Enter table name");
+
+        const expiry = Date.now() + (2 * 60 * 60 * 1000); // 2 Hours
+        db.push({ name, customer, expiry, alarm: customAudioURL });
+    }
+
+    // Real-time listener
+    db.on('value', snapshot => {
+        const grid = document.getElementById('slotsGrid');
+        grid.innerHTML = '';
+        snapshot.forEach(child => {
+            const data = child.val();
+            const key = child.key;
+            createCard(key, data);
+        });
+    });
+
+    function createCard(key, data) {
+        const card = document.createElement('div');
+        card.className = 'card table-card';
+        card.id = `card-${key}`;
+        
+        const updateTimer = () => {
+            const remaining = data.expiry - Date.now();
+            if (remaining <= 0) {
+                card.classList.add('expired');
+                card.innerHTML = `<h3>${data.name}</h3><div class="timer">TIME'S UP!</div>
+                                 <button onclick="renew('${key}')">RENEW</button>
+                                 <button style="background:var(--danger)" onclick="endSlot('${key}')">END SLOT</button>`;
+                playAlarm(data.alarm);
+                return;
+            }
+            const hrs = Math.floor(remaining/3600000);
+            const mins = Math.floor((remaining%3600000)/60000);
+            const secs = Math.floor((remaining%60000)/1000);
+            card.innerHTML = `<h3>${data.name}</h3><p>${data.customer}</p>
+                             <div class="timer">${hrs}:${mins}:${secs}</div>
+                             <button style="background:#555" onclick="endSlot('${key}')">END</button>`;
+        };
+
+        setInterval(updateTimer, 1000);
+        updateTimer();
+        document.getElementById('slotsGrid').appendChild(card);
+    }
+
+    function playAlarm(src) {
+        const player = document.getElementById('audioPlayer');
+        if(player.paused) {
+            player.src = src || "https://actions.google.com";
+            player.play();
+        }
+    }
+
+    function renew(key) {
+        document.getElementById('audioPlayer').pause();
+        db.child(key).update({ expiry: Date.now() + (2 * 60 * 60 * 1000) });
+    }
+
+    function endSlot(key) {
+        document.getElementById('audioPlayer').pause();
+        db.child(key).remove();
+    }
+</script>
+</body>
+</html>
