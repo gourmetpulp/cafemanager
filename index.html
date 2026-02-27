@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cafe Slot Manager</title>
 
-    <!-- Firebase Compat SDKs (these work with plain <script> tags) -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-storage-compat.js"></script>
 
     <style>
         body {
@@ -43,6 +42,15 @@
         button:hover {
             background-color: #45a049;
         }
+        .renew-btn {
+            background-color: #2196F3;
+            margin-top: 8px;
+            width: auto;
+            padding: 8px 16px;
+        }
+        .renew-btn:hover {
+            background-color: #1e88e5;
+        }
         #slots {
             margin-top: 20px;
         }
@@ -66,42 +74,29 @@
 </head>
 <body>
     <div class="container">
-        <div id="login-section">
-            <h2>Login or Sign Up</h2>
-            <input id="email" type="email" placeholder="Email" required>
-            <input id="password" type="password" placeholder="Password" required>
-            <button onclick="signup()">Sign Up with Email</button>
-            <button onclick="login()">Login with Email</button>
-            <button onclick="googleLogin()">Login with Google</button>
-        </div>
+        <h2>Cafe Slot Manager (No Login)</h2>
 
-        <div id="main-section" style="display: none;">
-            <h2>Cafe Slot Manager</h2>
+        <h3>Custom Ringtone (optional - shared)</h3>
+        <input id="ringtone-file" type="file" accept="audio/*">
+        <button onclick="uploadRingtone()">Upload Ringtone</button>
+        <p>Current: <span id="current-ringtone">Default beep</span></p>
 
-            <h3>Custom Ringtone (optional)</h3>
-            <input id="ringtone-file" type="file" accept="audio/*">
-            <button onclick="uploadRingtone()">Upload Ringtone</button>
-            <p>Current: <span id="current-ringtone">Default beep</span></p>
+        <hr>
 
-            <hr>
+        <h3>Start New 2-Hour Slot</h3>
+        <input id="table-name" placeholder="Table Name / Number" required>
+        <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
+        <input id="customer-name" placeholder="Customer Name" required>
+        <button onclick="startSlot()">Start Slot</button>
 
-            <h3>Start New 2-Hour Slot</h3>
-            <input id="table-name" placeholder="Table Name / Number" required>
-            <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
-            <input id="customer-name" placeholder="Customer Name" required>
-            <button onclick="startSlot()">Start Slot</button>
+        <hr>
 
-            <hr>
-
-            <h3>Active Slots</h3>
-            <div id="slots"></div>
-        </div>
+        <h3>Active Slots (All in Project)</h3>
+        <div id="slots"></div>
     </div>
 
     <script>
-        // ────────────────────────────────────────────────
-        //  REPLACE WITH YOUR OWN FIREBASE CONFIG
-        // ────────────────────────────────────────────────
+        // REPLACE WITH YOUR FIREBASE CONFIG
        const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
@@ -112,78 +107,37 @@
   measurementId: "G-KF4C2MGND1"
 };
 
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
 
-        let currentUser;
         let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3'; // fallback
-        let slots = {};     // local cache
-        let timers = {};    // alarm timeouts
-
-        // Listen for auth changes
-        auth.onAuthStateChanged(user => {
-            currentUser = user;
-            if (user) {
-                document.getElementById('login-section').style.display = 'none';
-                document.getElementById('main-section').style.display = 'block';
-                loadSettings();
-                loadSlots();
-                startUIUpdater();
-            } else {
-                document.getElementById('login-section').style.display = 'block';
-                document.getElementById('main-section').style.display = 'none';
-            }
-        });
-
-        function signup() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            if (!email || !password) return alert("Email and password required");
-            auth.createUserWithEmailAndPassword(email, password)
-                .catch(err => alert(err.message));
-        }
-
-        function login() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            if (!email || !password) return alert("Email and password required");
-            auth.signInWithEmailAndPassword(email, password)
-                .catch(err => alert(err.message));
-        }
-
-        function googleLogin() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider)
-                .catch(err => alert(err.message));
-        }
+        let slots = {};     // local cache: id → data
+        let timers = {};    // slotId → timeout
 
         function loadSettings() {
-            db.collection('settings').doc(currentUser.uid).get()
+            db.collection('settings').doc('global').get()
                 .then(doc => {
                     if (doc.exists && doc.data().ringtone) {
                         ringtoneUrl = doc.data().ringtone;
                         document.getElementById('current-ringtone').innerText = "Custom uploaded";
                     }
                 })
-                .catch(err => console.error(err));
+                .catch(err => console.error("Settings load error:", err));
         }
 
         function uploadRingtone() {
             const file = document.getElementById('ringtone-file').files[0];
             if (!file) return alert("Please select an audio file first");
 
-            const storageRef = storage.ref(`ringtones/${currentUser.uid}/${file.name}`);
+            const storageRef = storage.ref(`ringtones/global/${file.name}`);
             storageRef.put(file)
                 .then(() => storageRef.getDownloadURL())
                 .then(url => {
-                    db.collection('settings').doc(currentUser.uid).set({ ringtone: url }, { merge: true });
+                    db.collection('settings').doc('global').set({ ringtone: url }, { merge: true });
                     ringtoneUrl = url;
                     document.getElementById('current-ringtone').innerText = "Custom uploaded";
-                    alert("Ringtone uploaded!");
+                    alert("Ringtone uploaded! (Shared)");
                 })
                 .catch(err => alert("Upload failed: " + err.message));
         }
@@ -195,14 +149,13 @@
 
             if (!table || !name) return alert("Table and Name are required");
             if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
-                return alert("Mobile number must be exactly 10 digits");
+                return alert("Mobile must be exactly 10 digits");
             }
 
             const now = new Date();
             const end = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
             db.collection('slots').add({
-                userId: currentUser.uid,
                 table,
                 mobile: mobile || null,
                 name,
@@ -214,12 +167,26 @@
                 document.getElementById('mobile').value = '';
                 document.getElementById('customer-name').value = '';
             })
-            .catch(err => alert("Error starting slot: " + err.message));
+            .catch(err => alert("Error: " + err.message));
+        }
+
+        function renewSlot(slotId) {
+            if (!confirm("Renew this slot for another 2 hours?")) return;
+
+            const newEnd = new Date(Date.now() + 2 * 60 * 60 * 1000);
+
+            db.collection('slots').doc(slotId).update({
+                end: firebase.firestore.Timestamp.fromDate(newEnd)
+            })
+            .then(() => {
+                console.log("Slot renewed:", slotId);
+                // UI will auto-update via listener
+            })
+            .catch(err => alert("Renew failed: " + err.message));
         }
 
         function loadSlots() {
             db.collection('slots')
-                .where('userId', '==', currentUser.uid)
                 .where('end', '>', firebase.firestore.Timestamp.now())
                 .onSnapshot(snap => {
                     slots = {};
@@ -228,7 +195,7 @@
                         setupTimer(doc.id, slots[doc.id]);
                     });
                     updateSlotsUI();
-                }, err => console.error("Slots listener error:", err));
+                }, err => console.error("Listener error:", err));
         }
 
         function setupTimer(slotId, slotData) {
@@ -246,11 +213,11 @@
 
         function playAlarm() {
             const audio = new Audio(ringtoneUrl);
-            audio.play().catch(e => console.warn("Audio play failed (autoplay policy?):", e));
+            audio.play().catch(e => console.warn("Audio failed (autoplay?):", e));
         }
 
         function startUIUpdater() {
-            setInterval(updateSlotsUI, 15000); // refresh display every 15s
+            setInterval(updateSlotsUI, 15000);
         }
 
         function updateSlotsUI() {
@@ -275,14 +242,30 @@
 
                 const div = document.createElement('div');
                 div.className = 'slot-item ' + className;
-                div.innerHTML = `Table <b>${data.table}</b> • ${data.name || '—'} • ${data.mobile || '—'} • ${status}`;
+                div.innerHTML = `
+                    Table <b>${data.table}</b> • ${data.name || '—'} • ${data.mobile || '—'} • ${status}
+                `;
+
+                if (msLeft > 0) {
+                    const renewBtn = document.createElement('button');
+                    renewBtn.className = 'renew-btn';
+                    renewBtn.textContent = 'Renew (2h)';
+                    renewBtn.onclick = () => renewSlot(id);
+                    div.appendChild(renewBtn);
+                }
+
                 container.appendChild(div);
             });
 
             if (Object.keys(slots).length === 0) {
-                container.innerHTML = '<p style="color:#777;">No active slots right now.</p>';
+                container.innerHTML = '<p style="color:#777;">No active slots.</p>';
             }
         }
+
+        // Start everything
+        loadSettings();
+        loadSlots();
+        startUIUpdater();
     </script>
 </body>
 </html>
