@@ -12,109 +12,192 @@
 
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 1.2rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        .header-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .logo-title h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        .logo-title .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+        .datetime {
+            font-size: 0.95rem;
+            text-align: right;
+            line-height: 1.4;
         }
         .container {
-            max-width: 800px;
-            margin: auto;
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .card {
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+        }
+        h2, h3 {
+            margin-top: 0;
+            color: #2c3e50;
         }
         input, button {
-            margin: 8px 0;
-            padding: 10px;
+            margin: 0.6rem 0;
+            padding: 0.9rem 1.1rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            border: 1px solid #ddd;
             width: 100%;
             box-sizing: border-box;
-            font-size: 16px;
         }
         button {
-            background-color: #4CAF50;
+            background-color: #27ae60;
             color: white;
             border: none;
             cursor: pointer;
-            border-radius: 4px;
+            font-weight: 500;
+            transition: background 0.2s;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #219653;
         }
         .renew-btn {
-            background-color: #2196F3;
-            margin-top: 8px;
+            background-color: #2980b9;
             width: auto;
-            padding: 8px 16px;
+            padding: 0.7rem 1.3rem;
+            font-size: 0.95rem;
         }
         .renew-btn:hover {
-            background-color: #1e88e5;
+            background-color: #2471a3;
         }
         #slots {
-            margin-top: 20px;
+            margin-top: 1.5rem;
         }
         .slot-item {
-            border-bottom: 1px solid #ddd;
-            padding: 12px 0;
-            font-size: 15px;
+            padding: 1.1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .slot-item:last-child {
+            border-bottom: none;
         }
         .expired {
-            color: #d32f2f;
-            font-weight: bold;
+            color: #c0392b;
+            font-weight: 600;
         }
         .progress-container {
             width: 100%;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            margin-top: 8px;
-            height: 12px;
+            background-color: #ecf0f1;
+            border-radius: 6px;
+            height: 10px;
             overflow: hidden;
+            margin-top: 0.4rem;
         }
         .progress-bar {
             height: 100%;
             width: 0%;
-            transition: width 1s linear, background-color 0.5s;
-            border-radius: 4px;
+            transition: width 0.8s ease-out, background-color 0.4s;
         }
-        .progress-green  { background-color: #4CAF50; }
-        .progress-orange { background-color: #FF9800; }
-        .progress-red    { background-color: #F44336; }
-        hr {
-            margin: 25px 0;
+        .progress-green  { background-color: #27ae60; }
+        .progress-orange { background-color: #f39c12; }
+        .progress-red    { background-color: #e74c3c; }
+        .settings-card {
+            background: #fafbfc;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            padding: 1.4rem;
+            margin-top: 3rem;
         }
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 15px; }
+        .settings-card h3 {
+            margin-top: 0;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .datetime {
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-title">
+                <h1>Cafe Slot Manager</h1>
+                <div class="subtitle">Table Booking & Time Tracking • Gourmet Cafe</div>
+            </div>
+            <div class="datetime" id="current-datetime">
+                Loading date & time...
+            </div>
+        </div>
+    </header>
+
     <div class="container">
-        <h2>Cafe Slot Manager (No Login - 2 min slots for testing)</h2>
+        <div class="card">
+            <h2>New Slot</h2>
+            <h3>Start a 2-minute session (testing mode)</h3>
 
-        <h3>Custom Ringtone (optional - shared)</h3>
-        <input id="ringtone-file" type="file" accept="audio/*">
-        <button onclick="uploadRingtone()">Upload Ringtone</button>
-        <p>Current: <span id="current-ringtone">Default beep</span></p>
+            <input id="table-name"    placeholder="Table Name / Number" required>
+            <input id="mobile"        placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
+            <input id="customer-name" placeholder="Customer Name" required>
+            <button onclick="startSlot()">Start Slot</button>
+        </div>
 
-        <hr>
+        <div class="card">
+            <h2>Active Slots</h2>
+            <div id="slots"></div>
+        </div>
 
-        <h3>Start New 2-Minute Slot</h3>
-        <input id="table-name" placeholder="Table Name / Number" required>
-        <input id="mobile" placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
-        <input id="customer-name" placeholder="Customer Name" required>
-        <button onclick="startSlot()">Start Slot</button>
-
-        <hr>
-
-        <h3>Active Slots (All in Project)</h3>
-        <div id="slots"></div>
+        <!-- Ringtone settings moved to bottom, less prominent -->
+        <div class="settings-card">
+            <h3>Audio Settings (optional)</h3>
+            <p style="color:#7f8c8d; font-size:0.95rem; margin:0.5rem 0 1rem;">
+                Upload a custom notification sound (shared for all users)
+            </p>
+            <input id="ringtone-file" type="file" accept="audio/*">
+            <button onclick="uploadRingtone()">Upload Ringtone</button>
+            <p style="margin-top:0.8rem; color:#7f8c8d;">
+                Current: <span id="current-ringtone">Default beep</span>
+            </p>
+        </div>
     </div>
 
     <script>
-        // REPLACE WITH YOUR FIREBASE CONFIG
-        const firebaseConfig = {
+        // ────────────────────────────────────────────────
+        //  REPLACE WITH YOUR FIREBASE CONFIG
+        // ────────────────────────────────────────────────
+       const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -129,25 +212,38 @@
         const storage = firebase.storage();
 
         let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3';
-        let slots = {};     // id → data
-        let timers = {};    // slotId → timeout ID
+        let slots = {};
+        let timers = {};
 
-        const SLOT_DURATION_MS = 2 * 60 * 1000;  // ← 2 minutes (change here later if needed)
+        const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes (testing)
+
+        // Live date & time in header
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true
+            };
+            document.getElementById('current-datetime').textContent = 
+                now.toLocaleString('en-IN', options) + ' IST';
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
 
         function loadSettings() {
             db.collection('settings').doc('global').get()
                 .then(doc => {
                     if (doc.exists && doc.data().ringtone) {
                         ringtoneUrl = doc.data().ringtone;
-                        document.getElementById('current-ringtone').innerText = "Custom uploaded";
+                        document.getElementById('current-ringtone').innerText = "Custom sound uploaded";
                     }
                 })
-                .catch(err => console.error("Settings load error:", err));
+                .catch(err => console.error(err));
         }
 
         function uploadRingtone() {
             const file = document.getElementById('ringtone-file').files[0];
-            if (!file) return alert("Please select an audio file first");
+            if (!file) return alert("Select an audio file first");
 
             const storageRef = storage.ref(`ringtones/global/${file.name}`);
             storageRef.put(file)
@@ -155,8 +251,8 @@
                 .then(url => {
                     db.collection('settings').doc('global').set({ ringtone: url }, { merge: true });
                     ringtoneUrl = url;
-                    document.getElementById('current-ringtone').innerText = "Custom uploaded";
-                    alert("Ringtone uploaded! (Shared)");
+                    document.getElementById('current-ringtone').innerText = "Custom sound uploaded";
+                    alert("Ringtone updated");
                 })
                 .catch(err => alert("Upload failed: " + err.message));
         }
@@ -168,37 +264,29 @@
 
             if (!table || !name) return alert("Table and Name are required");
             if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
-                return alert("Mobile must be exactly 10 digits");
+                return alert("Mobile must be 10 digits");
             }
 
             const now = new Date();
             const end = new Date(now.getTime() + SLOT_DURATION_MS);
 
             db.collection('slots').add({
-                table,
-                mobile: mobile || null,
-                name,
+                table, mobile: mobile || null, name,
                 start: firebase.firestore.Timestamp.fromDate(now),
                 end:   firebase.firestore.Timestamp.fromDate(end)
-            })
-            .then(() => {
+            }).then(() => {
                 document.getElementById('table-name').value = '';
                 document.getElementById('mobile').value = '';
                 document.getElementById('customer-name').value = '';
-            })
-            .catch(err => alert("Error: " + err.message));
+            }).catch(err => alert("Error: " + err.message));
         }
 
         function renewSlot(slotId) {
-            if (!confirm("Renew this slot for another 2 minutes?")) return;
-
+            if (!confirm("Extend this slot by 2 minutes?")) return;
             const newEnd = new Date(Date.now() + SLOT_DURATION_MS);
-
             db.collection('slots').doc(slotId).update({
                 end: firebase.firestore.Timestamp.fromDate(newEnd)
-            })
-            .then(() => console.log("Slot renewed:", slotId))
-            .catch(err => alert("Renew failed: " + err.message));
+            }).catch(err => alert("Renew failed: " + err.message));
         }
 
         function loadSlots() {
@@ -211,29 +299,19 @@
                         setupTimer(doc.id, slots[doc.id]);
                     });
                     updateSlotsUI();
-                }, err => console.error("Listener error:", err));
+                });
         }
 
         function setupTimer(slotId, slotData) {
             if (timers[slotId]) clearTimeout(timers[slotId]);
-
             const msLeft = slotData.end.toDate() - Date.now();
             if (msLeft > 0) {
                 timers[slotId] = setTimeout(() => {
-                    playAlarm();
-                    alert(`Slot expired! Table ${slotData.table} - ${slotData.name}`);
+                    new Audio(ringtoneUrl).play().catch(e => console.warn(e));
+                    alert(`Time up! Table ${slotData.table} – ${slotData.name}`);
                     delete timers[slotId];
                 }, msLeft);
             }
-        }
-
-        function playAlarm() {
-            const audio = new Audio(ringtoneUrl);
-            audio.play().catch(e => console.warn("Audio failed (autoplay?):", e));
-        }
-
-        function startUIUpdater() {
-            setInterval(updateSlotsUI, 1000);  // faster refresh (1s) for smoother progress bar
         }
 
         function updateSlotsUI() {
@@ -245,60 +323,49 @@
                 const endTime = data.end.toDate().getTime();
                 const startTime = data.start.toDate().getTime();
                 const totalMs = endTime - startTime;
-                const elapsedMs = now - startTime;
                 const remainingMs = endTime - now;
+                let percent = (remainingMs / totalMs) * 100;
+                percent = Math.max(0, Math.min(100, percent));
 
-                let percentLeft = (remainingMs / totalMs) * 100;
-                percentLeft = Math.max(0, Math.min(100, percentLeft));
+                let statusText = remainingMs <= 0 ? 'Expired' : 
+                    `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
 
-                let status = '';
-                let className = '';
-                let progressClass = '';
+                let progressClass = remainingMs <= 0 ? 'progress-red' :
+                    percent > 50 ? 'progress-green' :
+                    percent > 20 ? 'progress-orange' : 'progress-red';
 
-                if (remainingMs <= 0) {
-                    status = 'Expired';
-                    className = 'expired';
-                    progressClass = 'progress-red';
-                    percentLeft = 0;
-                } else {
-                    const mins = Math.floor(remainingMs / 60000);
-                    const secs = Math.floor((remainingMs % 60000) / 1000);
-                    status = mins > 0 ? `${mins}m ${secs}s left` : `${secs}s left`;
-
-                    if (percentLeft > 50)      progressClass = 'progress-green';
-                    else if (percentLeft > 20) progressClass = 'progress-orange';
-                    else                       progressClass = 'progress-red';
-                }
-
-                const div = document.createElement('div');
-                div.className = 'slot-item ' + className;
-                div.innerHTML = `
-                    Table <b>${data.table}</b> • ${data.name || '—'} • ${data.mobile || '—'} • ${status}
+                const item = document.createElement('div');
+                item.className = 'slot-item' + (remainingMs <= 0 ? ' expired' : '');
+                item.innerHTML = `
+                    <div style="font-weight:500; margin-bottom:0.3rem;">
+                        Table <strong>${data.table}</strong> • ${data.name} • ${data.mobile || '—'}
+                    </div>
+                    <div style="color:#7f8c8d; font-size:0.95rem;">${statusText}</div>
                     <div class="progress-container">
-                        <div class="progress-bar ${progressClass}" style="width: ${percentLeft}%"></div>
+                        <div class="progress-bar ${progressClass}" style="width: ${percent}%"></div>
                     </div>
                 `;
 
                 if (remainingMs > 0) {
-                    const renewBtn = document.createElement('button');
-                    renewBtn.className = 'renew-btn';
-                    renewBtn.textContent = 'Renew (2 min)';
-                    renewBtn.onclick = () => renewSlot(id);
-                    div.appendChild(renewBtn);
+                    const btn = document.createElement('button');
+                    btn.className = 'renew-btn';
+                    btn.textContent = 'Renew 2 min';
+                    btn.onclick = () => renewSlot(id);
+                    item.appendChild(btn);
                 }
 
-                container.appendChild(div);
+                container.appendChild(item);
             });
 
             if (Object.keys(slots).length === 0) {
-                container.innerHTML = '<p style="color:#777;">No active slots.</p>';
+                container.innerHTML = '<p style="color:#95a5a6; text-align:center; padding:2rem 0;">No active sessions at the moment.</p>';
             }
         }
 
-        // Start everything
+        // Init
         loadSettings();
         loadSlots();
-        startUIUpdater();
+        setInterval(updateSlotsUI, 1000);
     </script>
 </body>
 </html>
