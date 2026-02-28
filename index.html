@@ -268,7 +268,7 @@ const firebaseConfig = {
         updateDateTime();
 
         async function startSlot() {
-            const table = document.getElementById('table-name').value.trim();
+            let table = document.getElementById('table-name').value.trim();
             const mobile = document.getElementById('mobile').value.trim();
             const name   = document.getElementById('customer-name').value.trim();
 
@@ -277,15 +277,18 @@ const firebaseConfig = {
                 return alert("Mobile number must be exactly 10 digits");
             }
 
+            // Normalize table name to lowercase for case-insensitive check
+            table = table.toLowerCase();
+
             try {
-                // Check for existing active slot with same table
+                // Check for existing active slot with same table (case-insensitive)
                 const tableQuery = await db.collection('slots')
-                    .where('table', '==', table)
+                    .where('table_lower', '==', table)  // Use a new 'table_lower' field for lowercase
                     .where('end', '>', firebase.firestore.Timestamp.now())
                     .get();
 
                 if (!tableQuery.empty) {
-                    return alert(`Table ${table} is already occupied!`);
+                    return alert(`Table ${table.toUpperCase()} is already occupied!`);
                 }
 
                 // Check for existing active slot with same mobile (if provided)
@@ -304,7 +307,8 @@ const firebaseConfig = {
                 const end = new Date(now.getTime() + SLOT_DURATION_MS);
 
                 await db.collection('slots').add({
-                    table,
+                    table: table.toUpperCase(),  // Store original case for display
+                    table_lower: table,  // Store lowercase for queries
                     mobile: mobile || null,
                     name,
                     start: firebase.firestore.Timestamp.fromDate(now),
