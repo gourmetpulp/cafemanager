@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cafe Slot Manager</title>
-
-    <!-- Firebase Compat SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-storage-compat.js"></script>
+    <title>Gourmet Cafe Slot Manager</title>
+    <link rel="icon" href="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=32,fit=crop,q=80/YleQgDVZEEHyOQ5q/gp-logo_primary_fullcolor-dJobDENzqGTGJQzY.png" type="image/png">
 
     <style>
         body {
@@ -19,62 +15,69 @@
             min-height: 100vh;
         }
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
             color: white;
             padding: 1.2rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2);
         }
         .header-content {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.5rem;
+        }
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+        .logo-title img {
+            height: 60px;
+            width: auto;
         }
         .logo-title h1 {
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 600;
-        }
-        .logo-title .subtitle {
-            font-size: 0.95rem;
-            opacity: 0.9;
-            margin-top: 0.25rem;
+            letter-spacing: -0.5px;
         }
         .datetime {
-            font-size: 0.95rem;
+            font-size: 1rem;
             text-align: right;
-            line-height: 1.4;
+            line-height: 1.5;
+            opacity: 0.95;
         }
         .container {
             max-width: 1100px;
-            margin: 2rem auto;
+            margin: 2.5rem auto;
             padding: 0 1.5rem;
         }
         .card {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            padding: 1.8rem;
-            margin-bottom: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 2.5rem;
         }
-        h2, h3 {
+        h2 {
             margin-top: 0;
-            color: #2c3e50;
+            color: #1e40af;
+            font-size: 1.6rem;
         }
         input, button {
-            margin: 0.6rem 0;
-            padding: 0.9rem 1.1rem;
-            border-radius: 6px;
-            font-size: 1rem;
-            border: 1px solid #ddd;
+            margin: 0.7rem 0;
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            border: 1px solid #d1d5db;
             width: 100%;
             box-sizing: border-box;
         }
         button {
-            background-color: #27ae60;
+            background-color: #1d4ed8;
             color: white;
             border: none;
             cursor: pointer;
@@ -82,61 +85,62 @@
             transition: background 0.2s;
         }
         button:hover {
-            background-color: #219653;
+            background-color: #1e40af;
         }
         .renew-btn {
-            background-color: #2980b9;
+            background-color: #2563eb;
             width: auto;
-            padding: 0.7rem 1.3rem;
+            padding: 0.8rem 1.5rem;
             font-size: 0.95rem;
+            margin-top: 0.5rem;
         }
         .renew-btn:hover {
-            background-color: #2471a3;
+            background-color: #1d4ed8;
         }
-        #slots {
-            margin-top: 1.5rem;
-        }
-        .slot-item {
-            padding: 1.1rem;
-            border-bottom: 1px solid #eee;
+        #slots .slot-item {
+            padding: 1.3rem;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             flex-direction: column;
-            gap: 0.6rem;
+            gap: 0.8rem;
         }
-        .slot-item:last-child {
+        #slots .slot-item:last-child {
             border-bottom: none;
         }
         .expired {
-            color: #c0392b;
+            color: #dc2626;
             font-weight: 600;
         }
         .progress-container {
             width: 100%;
-            background-color: #ecf0f1;
-            border-radius: 6px;
-            height: 10px;
+            background-color: #e5e7eb;
+            border-radius: 8px;
+            height: 12px;
             overflow: hidden;
-            margin-top: 0.4rem;
+            margin-top: 0.5rem;
         }
         .progress-bar {
             height: 100%;
             width: 0%;
-            transition: width 0.8s ease-out, background-color 0.4s;
+            transition: width 0.6s ease-out, background-color 0.4s;
         }
-        .progress-green  { background-color: #27ae60; }
-        .progress-orange { background-color: #f39c12; }
-        .progress-red    { background-color: #e74c3c; }
-        .settings-card {
-            background: #fafbfc;
-            border: 1px solid #e0e6ed;
+        .progress-green  { background-color: #16a34a; }
+        .progress-orange { background-color: #ea580c; }
+        .progress-red    { background-color: #dc2626; }
+        .notification-banner {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #dc2626;
+            color: white;
+            padding: 1rem 2.5rem;
             border-radius: 8px;
-            padding: 1.4rem;
-            margin-top: 3rem;
-        }
-        .settings-card h3 {
-            margin-top: 0;
-            color: #7f8c8d;
-            font-size: 1.1rem;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            z-index: 1000;
+            font-weight: 500;
+            max-width: 90%;
+            text-align: center;
         }
         @media (max-width: 768px) {
             .header-content {
@@ -146,6 +150,9 @@
             .datetime {
                 text-align: center;
             }
+            .logo-title img {
+                height: 50px;
+            }
         }
     </style>
 </head>
@@ -154,8 +161,8 @@
     <header class="header">
         <div class="header-content">
             <div class="logo-title">
-                <h1>Cafe Slot Manager</h1>
-                <div class="subtitle">Table Booking & Time Tracking • Gourmet Cafe</div>
+                <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,fit=crop,q=95/YleQgDVZEEHyOQ5q/gp-logo_primary_fullcolor-dJobDENzqGTGJQzY.png" alt="Gourmet Pulp Logo">
+                <h1>Gourmet Cafe Slots</h1>
             </div>
             <div class="datetime" id="current-datetime">
                 Loading date & time...
@@ -165,37 +172,22 @@
 
     <div class="container">
         <div class="card">
-            <h2>New Slot</h2>
-            <h3>Start a 2-minute session (testing mode)</h3>
-
+            <h2>Start New Session</h2>
             <input id="table-name"    placeholder="Table Name / Number" required>
-            <input id="mobile"        placeholder="10-Digit Mobile Number" pattern="[0-9]{10}" maxlength="10">
+            <input id="mobile"        placeholder="10-Digit Mobile Number (optional)" pattern="[0-9]{10}" maxlength="10">
             <input id="customer-name" placeholder="Customer Name" required>
-            <button onclick="startSlot()">Start Slot</button>
+            <button onclick="startSlot()">Start 2-Minute Slot</button>
         </div>
 
         <div class="card">
-            <h2>Active Slots</h2>
+            <h2>Active Sessions</h2>
             <div id="slots"></div>
-        </div>
-
-        <!-- Ringtone settings moved to bottom, less prominent -->
-        <div class="settings-card">
-            <h3>Audio Settings (optional)</h3>
-            <p style="color:#7f8c8d; font-size:0.95rem; margin:0.5rem 0 1rem;">
-                Upload a custom notification sound (shared for all users)
-            </p>
-            <input id="ringtone-file" type="file" accept="audio/*">
-            <button onclick="uploadRingtone()">Upload Ringtone</button>
-            <p style="margin-top:0.8rem; color:#7f8c8d;">
-                Current: <span id="current-ringtone">Default beep</span>
-            </p>
         </div>
     </div>
 
     <script>
         // ────────────────────────────────────────────────
-        //  REPLACE WITH YOUR FIREBASE CONFIG
+        //  FIREBASE CONFIG – replace with your values
         // ────────────────────────────────────────────────
        const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
@@ -209,53 +201,29 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        let ringtoneUrl = 'https://www.soundjay.com/buttons/beep-07.mp3';
         let slots = {};
         let timers = {};
 
         const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes (testing)
 
-        // Live date & time in header
+        // Live date & time
         function updateDateTime() {
             const now = new Date();
             const options = {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-                hour: '2-digit', minute: '2-digit', hour12: true
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
             };
             document.getElementById('current-datetime').textContent = 
                 now.toLocaleString('en-IN', options) + ' IST';
         }
         setInterval(updateDateTime, 1000);
         updateDateTime();
-
-        function loadSettings() {
-            db.collection('settings').doc('global').get()
-                .then(doc => {
-                    if (doc.exists && doc.data().ringtone) {
-                        ringtoneUrl = doc.data().ringtone;
-                        document.getElementById('current-ringtone').innerText = "Custom sound uploaded";
-                    }
-                })
-                .catch(err => console.error(err));
-        }
-
-        function uploadRingtone() {
-            const file = document.getElementById('ringtone-file').files[0];
-            if (!file) return alert("Select an audio file first");
-
-            const storageRef = storage.ref(`ringtones/global/${file.name}`);
-            storageRef.put(file)
-                .then(() => storageRef.getDownloadURL())
-                .then(url => {
-                    db.collection('settings').doc('global').set({ ringtone: url }, { merge: true });
-                    ringtoneUrl = url;
-                    document.getElementById('current-ringtone').innerText = "Custom sound uploaded";
-                    alert("Ringtone updated");
-                })
-                .catch(err => alert("Upload failed: " + err.message));
-        }
 
         function startSlot() {
             const table = document.getElementById('table-name').value.trim();
@@ -264,25 +232,29 @@
 
             if (!table || !name) return alert("Table and Name are required");
             if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
-                return alert("Mobile must be 10 digits");
+                return alert("Mobile number must be exactly 10 digits");
             }
 
             const now = new Date();
             const end = new Date(now.getTime() + SLOT_DURATION_MS);
 
             db.collection('slots').add({
-                table, mobile: mobile || null, name,
+                table,
+                mobile: mobile || null,
+                name,
                 start: firebase.firestore.Timestamp.fromDate(now),
                 end:   firebase.firestore.Timestamp.fromDate(end)
-            }).then(() => {
+            })
+            .then(() => {
                 document.getElementById('table-name').value = '';
                 document.getElementById('mobile').value = '';
                 document.getElementById('customer-name').value = '';
-            }).catch(err => alert("Error: " + err.message));
+            })
+            .catch(err => alert("Error starting slot: " + err.message));
         }
 
         function renewSlot(slotId) {
-            if (!confirm("Extend this slot by 2 minutes?")) return;
+            if (!confirm("Renew this slot for another 2 minutes?")) return;
             const newEnd = new Date(Date.now() + SLOT_DURATION_MS);
             db.collection('slots').doc(slotId).update({
                 end: firebase.firestore.Timestamp.fromDate(newEnd)
@@ -299,19 +271,41 @@
                         setupTimer(doc.id, slots[doc.id]);
                     });
                     updateSlotsUI();
-                });
+                }, err => console.error("Slots listener error:", err));
         }
 
         function setupTimer(slotId, slotData) {
             if (timers[slotId]) clearTimeout(timers[slotId]);
+
             const msLeft = slotData.end.toDate() - Date.now();
             if (msLeft > 0) {
                 timers[slotId] = setTimeout(() => {
-                    new Audio(ringtoneUrl).play().catch(e => console.warn(e));
-                    alert(`Time up! Table ${slotData.table} – ${slotData.name}`);
+                    showExpirationNotification(slotData);
                     delete timers[slotId];
                 }, msLeft);
             }
+        }
+
+        function showExpirationNotification(slotData) {
+            // Visual banner (always works)
+            const banner = document.createElement('div');
+            banner.className = 'notification-banner';
+            banner.innerHTML = `Time's up! Table <strong>${slotData.table}</strong> – ${slotData.name || '—'}`;
+            document.body.appendChild(banner);
+
+            setTimeout(() => banner.remove(), 10000);
+
+            // Try system beep (short data URI beep – works in many browsers without interaction after page load)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1000).join('Ag'));
+                audio.volume = 0.7;
+                audio.play().catch(e => console.warn("Beep failed:", e));
+            } catch (e) {
+                console.warn("Beep attempt failed:", e);
+            }
+
+            // Fallback alert
+            alert(`Time's up! Table ${slotData.table} – ${slotData.name || '—'}`);
         }
 
         function updateSlotsUI() {
@@ -324,11 +318,12 @@
                 const startTime = data.start.toDate().getTime();
                 const totalMs = endTime - startTime;
                 const remainingMs = endTime - now;
-                let percent = (remainingMs / totalMs) * 100;
+                let percent = totalMs > 0 ? (remainingMs / totalMs) * 100 : 0;
                 percent = Math.max(0, Math.min(100, percent));
 
-                let statusText = remainingMs <= 0 ? 'Expired' : 
-                    `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
+                let statusText = remainingMs <= 0 
+                    ? 'Expired' 
+                    : `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
 
                 let progressClass = remainingMs <= 0 ? 'progress-red' :
                     percent > 50 ? 'progress-green' :
@@ -337,10 +332,10 @@
                 const item = document.createElement('div');
                 item.className = 'slot-item' + (remainingMs <= 0 ? ' expired' : '');
                 item.innerHTML = `
-                    <div style="font-weight:500; margin-bottom:0.3rem;">
-                        Table <strong>${data.table}</strong> • ${data.name} • ${data.mobile || '—'}
+                    <div style="font-weight:500; font-size:1.1rem;">
+                        Table <strong>${data.table}</strong> • ${data.name || '—'} • ${data.mobile || '—'}
                     </div>
-                    <div style="color:#7f8c8d; font-size:0.95rem;">${statusText}</div>
+                    <div style="color:#6b7280;">${statusText}</div>
                     <div class="progress-container">
                         <div class="progress-bar ${progressClass}" style="width: ${percent}%"></div>
                     </div>
@@ -358,12 +353,11 @@
             });
 
             if (Object.keys(slots).length === 0) {
-                container.innerHTML = '<p style="color:#95a5a6; text-align:center; padding:2rem 0;">No active sessions at the moment.</p>';
+                container.innerHTML = '<p style="color:#6b7280; text-align:center; padding:3rem 0; font-size:1.1rem;">No active sessions at the moment.</p>';
             }
         }
 
-        // Init
-        loadSettings();
+        // Initialize
         loadSlots();
         setInterval(updateSlotsUI, 1000);
     </script>
