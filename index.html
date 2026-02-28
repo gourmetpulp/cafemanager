@@ -1,237 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gourmet Cafe Slot Manager</title>
-    <link rel="icon" href="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=32,fit=crop,q=80/YleQgDVZEEHyOQ5q/gp-logo_primary_fullcolor-dJobDENzqGTGJQzY.png" type="image/png">
-
-    <!-- Firebase Compat SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore-compat.js"></script>
-
-    <style>
-        :root {
-            --bg: #111827;
-            --card-bg: #1e293b;
-            --text: #e5e7eb;
-            --text-muted: #9ca3af;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --accent: #60a5fa;
-            --green: #22c55e;
-            --orange: #f59e0b;
-            --red: #ef4444;
-            --border: #334155;
-        }
-
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            padding: 1.2rem 2rem;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.5);
-        }
-
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-        }
-
-        .logo-title {
-            display: flex;
-            align-items: center;
-            gap: 1.2rem;
-        }
-
-        .logo-title img {
-            height: 60px;
-            width: auto;
-        }
-
-        .logo-title h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 600;
-            color: #f1f5f9;
-        }
-
-        .datetime {
-            font-size: 1rem;
-            text-align: right;
-            opacity: 0.9;
-            color: #cbd5e1;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 2.5rem auto;
-            padding: 0 1.5rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            padding: 2rem;
-            margin-bottom: 2.5rem;
-            border: 1px solid var(--border);
-        }
-
-        h2 {
-            margin-top: 0;
-            color: var(--accent);
-            font-size: 1.6rem;
-        }
-
-        input, button {
-            margin: 0.7rem 0;
-            padding: 1rem 1.2rem;
-            border-radius: 8px;
-            font-size: 1.05rem;
-            border: 1px solid var(--border);
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        input {
-            background-color: #0f172a;
-            color: var(--text);
-        }
-
-        input::placeholder {
-            color: #94a3b8;
-        }
-
-        button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .renew-btn {
-            background-color: var(--accent);
-            width: auto;
-            padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
-            margin-top: 0.5rem;
-        }
-
-        .renew-btn:hover {
-            background-color: var(--primary);
-        }
-
-        .slot-item {
-            padding: 1.3rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-
-        .slot-item:last-child {
-            border-bottom: none;
-        }
-
-        .expired {
-            color: #f87171;
-            font-weight: 600;
-        }
-
-        .progress-container {
-            width: 100%;
-            background-color: var(--border);
-            border-radius: 8px;
-            height: 12px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            transition: width 0.6s ease-out, background-color 0.4s;
-        }
-
-        .progress-green  { background-color: var(--green); }
-        .progress-orange { background-color: var(--orange); }
-        .progress-red    { background-color: var(--red); }
-
-        .notification-banner {
-            position: fixed;
-            top: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #991b1b;
-            color: #fee2e2;
-            padding: 1rem 2.5rem;
-            border-radius: 8px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-            z-index: 1000;
-            font-weight: 500;
-            max-width: 90%;
-            text-align: center;
-            border: 1px solid #7f1d1d;
-        }
-
-        @media (max-width: 768px) {
-            .header-content { flex-direction: column; text-align: center; }
-            .datetime { text-align: center; }
-            .logo-title img { height: 50px; }
-        }
-    </style>
-</head>
-<body>
-
-    <header class="header">
-        <div class="header-content">
-            <div class="logo-title">
-                <img src="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=375,fit=crop,q=95/YleQgDVZEEHyOQ5q/gp-logo_primary_fullcolor-dJobDENzqGTGJQzY.png" alt="Gourmet Pulp Logo">
-                <h1>Gourmet Cafe Slots</h1>
-            </div>
-            <div class="datetime" id="current-datetime">Loading date & time...</div>
-        </div>
-    </header>
-
-    <div class="container">
-        <div class="card">
-            <h2>Start New Session</h2>
-            <input id="table-name"    placeholder="Table Name / Number" required>
-            <input id="mobile"        placeholder="10-Digit Mobile Number (optional)" pattern="[0-9]{10}" maxlength="10">
-            <input id="customer-name" placeholder="Customer Name" required>
-            <button onclick="startSlot()">Start 2-Minute Slot</button>
-        </div>
-
-        <div class="card">
-            <h2>Active Sessions</h2>
-            <div id="slots"></div>
-        </div>
-    </div>
-
-    <script>
-        // ────────────────────────────────────────────────
-        //  FIREBASE CONFIG – replace these values
-        // ────────────────────────────────────────────────
-const firebaseConfig = {
+<script>
+    // ────────────────────────────────────────────────
+    //  FIREBASE CONFIG – replace these values
+    // ────────────────────────────────────────────────
+   const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -240,210 +11,225 @@ const firebaseConfig = {
   appId: "1:359938483000:web:bc9fa519fed44321a257cd",
   measurementId: "G-KF4C2MGND1"
 };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
 
-        // Enable offline persistence
-        db.enablePersistence().catch(err => {
-            if (err.code === 'failed-precondition') {
-                console.warn("Persistence failed – multiple tabs open");
-            } else if (err.code === 'unimplemented') {
-                console.warn("Persistence not supported in this browser");
-            }
-        });
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        let slots = {};
-        let timers = {};
-
-        // Change to 2*60*60*1000 for real 2-hour slots
-        const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes for testing
-
-        // Live date & time
-        function updateDateTime() {
-            const now = new Date();
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-            document.getElementById('current-datetime').textContent = now.toLocaleString('en-IN', options) + ' IST';
+    // Enable offline persistence
+    db.enablePersistence().catch(err => {
+        if (err.code === 'failed-precondition') {
+            console.warn("Persistence failed – multiple tabs open");
+        } else if (err.code === 'unimplemented') {
+            console.warn("Persistence not supported in this browser");
         }
-        setInterval(updateDateTime, 1000);
-        updateDateTime();
+    });
 
-        async function startSlot() {
-            let table = document.getElementById('table-name').value.trim();
-            const mobile = document.getElementById('mobile').value.trim();
-            const name   = document.getElementById('customer-name').value.trim();
+    let slots = {};
+    let timers = {};
 
-            if (!table || !name) return alert("Table and Name are required");
-            if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
-                return alert("Mobile number must be exactly 10 digits");
-            }
+    const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes for testing (change to 2*60*60*1000 later)
 
-            // Normalize table name to lowercase for case-insensitive check
-            table = table.toLowerCase();
+    function updateDateTime() {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+        document.getElementById('current-datetime').textContent = now.toLocaleString('en-IN', options) + ' IST';
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
 
-            try {
-                // Check for existing active slot with same table (case-insensitive)
-                const tableQuery = await db.collection('slots')
-                    .where('table_lower', '==', table)  // Use a new 'table_lower' field for lowercase
+    async function startSlot() {
+        let table = document.getElementById('table-name').value.trim();
+        const mobile = document.getElementById('mobile').value.trim();
+        const name   = document.getElementById('customer-name').value.trim();
+
+        if (!table || !name) return alert("Table and Name are required");
+        if (mobile && (mobile.length !== 10 || !/^\d{10}$/.test(mobile))) {
+            return alert("Mobile number must be exactly 10 digits");
+        }
+
+        // Normalize table to lowercase for case-insensitive check
+        const tableLower = table.toLowerCase();
+
+        try {
+            console.log(`Checking for active slot with table_lower = "${tableLower}"`);
+
+            // Query using table_lower (preferred) or fallback to table lowercase
+            const tableQuery = await db.collection('slots')
+                .where('table_lower', '==', tableLower)
+                .where('end', '>', firebase.firestore.Timestamp.now())
+                .get();
+
+            if (tableQuery.empty) {
+                // Fallback: check original table field in lowercase
+                const fallbackQuery = await db.collection('slots')
+                    .where('table', '==', table.toUpperCase())
                     .where('end', '>', firebase.firestore.Timestamp.now())
                     .get();
 
-                if (!tableQuery.empty) {
-                    return alert(`Table ${table.toUpperCase()} is already occupied!`);
+                if (!fallbackQuery.empty) {
+                    console.log("Found duplicate via fallback (original table field)");
+                    return alert(`Table ${table} is already occupied!`);
                 }
-
-                // Check for existing active slot with same mobile (if provided)
-                if (mobile) {
-                    const mobileQuery = await db.collection('slots')
-                        .where('mobile', '==', mobile)
-                        .where('end', '>', firebase.firestore.Timestamp.now())
-                        .get();
-
-                    if (!mobileQuery.empty) {
-                        return alert(`Mobile ${mobile} is already in an active session!`);
-                    }
-                }
-
-                const now = new Date();
-                const end = new Date(now.getTime() + SLOT_DURATION_MS);
-
-                await db.collection('slots').add({
-                    table: table.toUpperCase(),  // Store original case for display
-                    table_lower: table,  // Store lowercase for queries
-                    mobile: mobile || null,
-                    name,
-                    start: firebase.firestore.Timestamp.fromDate(now),
-                    end:   firebase.firestore.Timestamp.fromDate(end)
-                });
-
-                alert("Slot started successfully!");
-
-                // Clear form
-                document.getElementById('table-name').value = '';
-                document.getElementById('mobile').value = '';
-                document.getElementById('customer-name').value = '';
-            } catch (err) {
-                alert("Error starting slot: " + err.message);
-            }
-        }
-
-        function renewSlot(slotId) {
-            const slotData = slots[slotId];
-            if (!slotData) return;
-
-            if (!confirm("Extend this slot by another 2 minutes?")) return;
-
-            const now = Date.now();
-            const currentEnd = slotData.end.toDate().getTime();
-            const newEndTime = Math.max(now, currentEnd) + SLOT_DURATION_MS;
-
-            db.collection('slots').doc(slotId).update({
-                end: firebase.firestore.Timestamp.fromDate(new Date(newEndTime))
-            })
-            .then(() => {
-                console.log(`Slot ${slotId} extended`);
-            })
-            .catch(err => alert("Renew failed: " + err.message));
-        }
-
-        function loadSlots() {
-            db.collection('slots')
-                .where('end', '>', firebase.firestore.Timestamp.now())
-                .onSnapshot(snap => {
-                    console.log(`Received ${snap.size} active slots`);
-                    slots = {};
-                    snap.forEach(doc => {
-                        slots[doc.id] = doc.data();
-                        setupTimer(doc.id, slots[doc.id]);
-                    });
-                    updateSlotsUI();
-                }, err => {
-                    console.error("Firestore listener error:", err);
-                    alert("Database connection issue. Check internet or Firebase rules.");
-                });
-        }
-
-        function setupTimer(slotId, slotData) {
-            if (timers[slotId]) clearTimeout(timers[slotId]);
-
-            const msLeft = slotData.end.toDate() - Date.now();
-            if (msLeft > 0) {
-                timers[slotId] = setTimeout(() => {
-                    showExpirationNotification(slotData);
-                    delete timers[slotId];
-                }, msLeft);
-            }
-        }
-
-        function showExpirationNotification(slotData) {
-            const banner = document.createElement('div');
-            banner.className = 'notification-banner';
-            banner.innerHTML = `Time's up! Table <strong>${slotData.table}</strong> – ${slotData.name || '—'}`;
-            document.body.appendChild(banner);
-            setTimeout(() => banner.remove(), 10000);
-
-            try {
-                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1000).join('Ag'));
-                audio.volume = 0.7;
-                audio.play().catch(e => console.warn("Beep failed:", e));
-            } catch (e) {
-                console.warn("Beep attempt failed:", e);
+            } else {
+                console.log("Found duplicate via table_lower field");
+                return alert(`Table ${table} is already occupied!`);
             }
 
-            alert(`Time's up! Table ${slotData.table} – ${slotData.name || '—'}`);
-        }
+            // Mobile check (unchanged)
+            if (mobile) {
+                const mobileQuery = await db.collection('slots')
+                    .where('mobile', '==', mobile)
+                    .where('end', '>', firebase.firestore.Timestamp.now())
+                    .get();
 
-        function updateSlotsUI() {
-            const container = document.getElementById('slots');
-            container.innerHTML = '';
-            const now = Date.now();
-
-            Object.entries(slots).forEach(([id, data]) => {
-                const endTime = data.end.toDate().getTime();
-                const startTime = data.start.toDate().getTime();
-                const totalMs = endTime - startTime;
-                const remainingMs = endTime - now;
-                let percent = totalMs > 0 ? (remainingMs / totalMs) * 100 : 0;
-                percent = Math.max(0, Math.min(100, percent));
-
-                let statusText = remainingMs <= 0
-                    ? 'Expired'
-                    : `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
-
-                let progressClass = remainingMs <= 0 ? 'progress-red' :
-                    percent > 50 ? 'progress-green' :
-                    percent > 20 ? 'progress-orange' : 'progress-red';
-
-                const item = document.createElement('div');
-                item.className = 'slot-item' + (remainingMs <= 0 ? ' expired' : '');
-                item.innerHTML = `
-                    <div style="font-weight:500; font-size:1.1rem;">
-                        Table <strong>${data.table}</strong> • ${data.name || '—'} • ${data.mobile || '—'}
-                    </div>
-                    <div style="color:var(--text-muted);">${statusText}</div>
-                    <div class="progress-container">
-                        <div class="progress-bar ${progressClass}" style="width: ${percent}%"></div>
-                    </div>
-                `;
-
-                if (remainingMs > 0) {
-                    const btn = document.createElement('button');
-                    btn.className = 'renew-btn';
-                    btn.textContent = 'Extend 2 min';
-                    btn.onclick = () => renewSlot(id);
-                    item.appendChild(btn);
+                if (!mobileQuery.empty) {
+                    return alert(`Mobile ${mobile} is already in an active session!`);
                 }
+            }
 
-                container.appendChild(item);
+            // All checks passed → create slot
+            const now = new Date();
+            const end = new Date(now.getTime() + SLOT_DURATION_MS);
+
+            await db.collection('slots').add({
+                table: table.toUpperCase(),        // display-friendly
+                table_lower: tableLower,           // for fast case-insensitive queries
+                mobile: mobile || null,
+                name,
+                start: firebase.firestore.Timestamp.fromDate(now),
+                end:   firebase.firestore.Timestamp.fromDate(end)
             });
 
-            if (Object.keys(slots).length === 0) {
-                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:3rem 0; font-size:1.1rem;">No active sessions at the moment.</p>';
-            }
+            alert("Slot started successfully!");
+
+            document.getElementById('table-name').value = '';
+            document.getElementById('mobile').value = '';
+            document.getElementById('customer-name').value = '';
+        } catch (err) {
+            console.error("Start slot error:", err);
+            alert("Error starting slot: " + err.message);
+        }
+    }
+
+    // ────────────────────────────────────────────────
+    // renewSlot, loadSlots, setupTimer, showExpirationNotification, updateSlotsUI
+    // (unchanged from previous version – copy them from your last working code)
+    // ────────────────────────────────────────────────
+
+    function renewSlot(slotId) {
+        const slotData = slots[slotId];
+        if (!slotData) return;
+
+        if (!confirm("Extend this slot by another 2 minutes?")) return;
+
+        const now = Date.now();
+        const currentEnd = slotData.end.toDate().getTime();
+        const newEndTime = Math.max(now, currentEnd) + SLOT_DURATION_MS;
+
+        db.collection('slots').doc(slotId).update({
+            end: firebase.firestore.Timestamp.fromDate(new Date(newEndTime))
+        })
+        .then(() => console.log(`Slot ${slotId} extended`))
+        .catch(err => alert("Renew failed: " + err.message));
+    }
+
+    function loadSlots() {
+        db.collection('slots')
+            .where('end', '>', firebase.firestore.Timestamp.now())
+            .onSnapshot(snap => {
+                console.log(`Received ${snap.size} active slots`);
+                slots = {};
+                snap.forEach(doc => {
+                    slots[doc.id] = doc.data();
+                    setupTimer(doc.id, slots[doc.id]);
+                });
+                updateSlotsUI();
+            }, err => {
+                console.error("Firestore listener error:", err);
+                alert("Database connection issue. Check internet or Firebase rules.");
+            });
+    }
+
+    function setupTimer(slotId, slotData) {
+        if (timers[slotId]) clearTimeout(timers[slotId]);
+
+        const msLeft = slotData.end.toDate() - Date.now();
+        if (msLeft > 0) {
+            timers[slotId] = setTimeout(() => {
+                showExpirationNotification(slotData);
+                delete timers[slotId];
+            }, msLeft);
+        }
+    }
+
+    function showExpirationNotification(slotData) {
+        const banner = document.createElement('div');
+        banner.className = 'notification-banner';
+        banner.innerHTML = `Time's up! Table <strong>${slotData.table}</strong> – ${slotData.name || '—'}`;
+        document.body.appendChild(banner);
+        setTimeout(() => banner.remove(), 10000);
+
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1000).join('Ag'));
+            audio.volume = 0.7;
+            audio.play().catch(e => console.warn("Beep failed:", e));
+        } catch (e) {
+            console.warn("Beep attempt failed:", e);
         }
 
-        // Initialize
-        loadSlots();
-        setInterval(updateSlotsUI, 1000);
-    </script>
-</body>
-</html>
+        alert(`Time's up! Table ${slotData.table} – ${slotData.name || '—'}`);
+    }
+
+    function updateSlotsUI() {
+        const container = document.getElementById('slots');
+        container.innerHTML = '';
+        const now = Date.now();
+
+        Object.entries(slots).forEach(([id, data]) => {
+            const endTime = data.end.toDate().getTime();
+            const startTime = data.start.toDate().getTime();
+            const totalMs = endTime - startTime;
+            const remainingMs = endTime - now;
+            let percent = totalMs > 0 ? (remainingMs / totalMs) * 100 : 0;
+            percent = Math.max(0, Math.min(100, percent));
+
+            let statusText = remainingMs <= 0
+                ? 'Expired'
+                : `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
+
+            let progressClass = remainingMs <= 0 ? 'progress-red' :
+                percent > 50 ? 'progress-green' :
+                percent > 20 ? 'progress-orange' : 'progress-red';
+
+            const item = document.createElement('div');
+            item.className = 'slot-item' + (remainingMs <= 0 ? ' expired' : '');
+            item.innerHTML = `
+                <div style="font-weight:500; font-size:1.1rem;">
+                    Table <strong>${data.table}</strong> • ${data.name || '—'} • ${data.mobile || '—'}
+                </div>
+                <div style="color:var(--text-muted);">${statusText}</div>
+                <div class="progress-container">
+                    <div class="progress-bar ${progressClass}" style="width: ${percent}%"></div>
+                </div>
+            `;
+
+            if (remainingMs > 0) {
+                const btn = document.createElement('button');
+                btn.className = 'renew-btn';
+                btn.textContent = 'Extend 2 min';
+                btn.onclick = () => renewSlot(id);
+                item.appendChild(btn);
+            }
+
+            container.appendChild(item);
+        });
+
+        if (Object.keys(slots).length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:3rem 0; font-size:1.1rem;">No active sessions at the moment.</p>';
+        }
+    }
+
+    // Initialize
+    loadSlots();
+    setInterval(updateSlotsUI, 1000);
+</script>
