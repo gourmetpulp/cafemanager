@@ -215,8 +215,8 @@
     <div class="container">
         <div class="card">
             <h2>Start New Session</h2>
-            <input id="table-name" placeholder="Table Name / Number" required>
-            <input id="mobile" placeholder="10-Digit Mobile Number (optional)" pattern="[0-9]{10}" maxlength="10">
+            <input id="table-name"    placeholder="Table Name / Number" required>
+            <input id="mobile"        placeholder="10-Digit Mobile Number (optional)" pattern="[0-9]{10}" maxlength="10">
             <input id="customer-name" placeholder="Customer Name" required>
             <button onclick="startSlot()">Start 2-Minute Slot</button>
         </div>
@@ -231,7 +231,7 @@
         // ────────────────────────────────────────────────
         //  FIREBASE CONFIG – replace these values
         // ────────────────────────────────────────────────
-       const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -256,7 +256,7 @@
         let slots = {};
         let timers = {};
 
-        // Change this to 2*60*60*1000 when ready for real 2-hour slots
+        // Change to 2*60*60*1000 when ready for real 2-hour slots
         const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes for testing
 
         // Live date & time
@@ -314,6 +314,9 @@
             db.collection('slots').doc(slotId).update({
                 end: firebase.firestore.Timestamp.fromDate(new Date(newEndTime))
             })
+            .then(() => {
+                console.log(`Slot ${slotId} extended to ${new Date(newEndTime).toLocaleTimeString()}`);
+            })
             .catch(err => alert("Renew failed: " + err.message));
         }
 
@@ -347,6 +350,7 @@
         }
 
         function showExpirationNotification(slotData) {
+            // Visual banner
             const banner = document.createElement('div');
             banner.className = 'notification-banner';
             banner.innerHTML = `Time's up! Table <strong>${slotData.table}</strong> – ${slotData.name || '—'}`;
