@@ -1,25 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gourmet PuLp Slot Manager</title>
+    <title>Gourmet Cafe Slot Manager</title>
     <link rel="icon" href="https://assets.zyrosite.com/cdn-cgi/image/format=auto,w=32,fit=crop,q=80/YleQgDVZEEHyOQ5q/gp-logo_primary_fullcolor-dJobDENzqGTGJQzY.png" type="image/png">
 
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-firestore-compat.js"></script>
+
     <style>
+        :root {
+            --bg: #111827;
+            --card-bg: #1e293b;
+            --text: #e5e7eb;
+            --text-muted: #9ca3af;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --accent: #60a5fa;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --border: #334155;
+        }
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
-            background-color: #000000;
-            color: #e5e7eb;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            line-height: 1.5;
         }
+
         .header {
             background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            color: #f1f5f9;
             padding: 1.2rem 2rem;
             box-shadow: 0 3px 12px rgba(0,0,0,0.5);
         }
+
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
@@ -29,15 +49,18 @@
             flex-wrap: wrap;
             gap: 1.5rem;
         }
+
         .logo-title {
             display: flex;
             align-items: center;
             gap: 1.2rem;
         }
+
         .logo-title img {
             height: 60px;
             width: auto;
         }
+
         .logo-title h1 {
             margin: 0;
             font-size: 2rem;
@@ -45,6 +68,7 @@
             letter-spacing: -0.5px;
             color: #f1f5f9;
         }
+
         .datetime {
             font-size: 1rem;
             text-align: right;
@@ -52,89 +76,108 @@
             opacity: 0.9;
             color: #cbd5e1;
         }
+
         .container {
             max-width: 1100px;
             margin: 2.5rem auto;
             padding: 0 1.5rem;
         }
+
         .card {
-            background: #1e293b;
+            background: var(--card-bg);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
             padding: 2rem;
             margin-bottom: 2.5rem;
-            border: 1px solid #334155;
+            border: 1px solid var(--border);
         }
+
         h2 {
             margin-top: 0;
-            color: #60a5fa;
+            color: var(--accent);
             font-size: 1.6rem;
         }
+
         input, button {
             margin: 0.7rem 0;
             padding: 1rem 1.2rem;
             border-radius: 8px;
             font-size: 1.05rem;
-            border: 1px solid #475569;
+            border: 1px solid var(--border);
             width: 100%;
             box-sizing: border-box;
-            background-color: #0f172a;
-            color: #e5e7eb;
         }
+
+        input {
+            background-color: #0f172a;
+            color: var(--text);
+        }
+
         input::placeholder {
             color: #94a3b8;
         }
+
         button {
-            background-color: #3b82f6;
+            background-color: var(--primary);
             color: white;
             border: none;
             cursor: pointer;
             font-weight: 500;
             transition: background 0.2s;
         }
+
         button:hover {
-            background-color: #2563eb;
+            background-color: var(--primary-hover);
         }
+
         .renew-btn {
-            background-color: #60a5fa;
+            background-color: var(--accent);
             width: auto;
             padding: 0.8rem 1.5rem;
             font-size: 0.95rem;
             margin-top: 0.5rem;
         }
+
         .renew-btn:hover {
-            background-color: #3b82f6;
+            background-color: var(--primary);
         }
-        #slots .slot-item {
+
+        .slot-item {
             padding: 1.3rem;
-            border-bottom: 1px solid #334155;
+            border-bottom: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
         }
-        #slots .slot-item:last-child {
+
+        .slot-item:last-child {
             border-bottom: none;
         }
+
         .expired {
             color: #f87171;
             font-weight: 600;
         }
+
         .progress-container {
             width: 100%;
-            background-color: #334155;
+            background-color: var(--border);
             border-radius: 8px;
             height: 12px;
             overflow: hidden;
             margin-top: 0.5rem;
         }
+
         .progress-bar {
             height: 100%;
             width: 0%;
             transition: width 0.6s ease-out, background-color 0.4s;
         }
-        .progress-green  { background-color: #22c55e; }
-        .progress-orange { background-color: #f59e0b; }
-        .progress-red    { background-color: #ef4444; }
+
+        .progress-green  { background-color: var(--green); }
+        .progress-orange { background-color: var(--orange); }
+        .progress-red    { background-color: var(--red); }
+
         .notification-banner {
             position: fixed;
             top: 90px;
@@ -151,6 +194,7 @@
             text-align: center;
             border: 1px solid #7f1d1d;
         }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -196,9 +240,9 @@
 
     <script>
         // ────────────────────────────────────────────────
-        //  FIREBASE CONFIG – replace with your values
+        //  FIREBASE CONFIG – replace these values
         // ────────────────────────────────────────────────
-       const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyDje-Gtq7xsYHJO_0WjMJvvIVC4bKYYHII",
   authDomain: "gp-workspace-manager.firebaseapp.com",
   projectId: "gp-workspace-manager",
@@ -214,7 +258,7 @@
         let slots = {};
         let timers = {};
 
-        const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes (testing)
+        const SLOT_DURATION_MS = 2 * 60 * 1000;  // 2 minutes (change to 2*60*60*1000 for 2 hours)
 
         // Live date & time
         function updateDateTime() {
@@ -228,7 +272,7 @@
                 minute: '2-digit',
                 hour12: true
             };
-            document.getElementById('current-datetime').textContent = 
+            document.getElementById('current-datetime').textContent =
                 now.toLocaleString('en-IN', options) + ' IST';
         }
         setInterval(updateDateTime, 1000);
@@ -296,14 +340,14 @@
         }
 
         function showExpirationNotification(slotData) {
+            // Visual banner
             const banner = document.createElement('div');
             banner.className = 'notification-banner';
             banner.innerHTML = `Time's up! Table <strong>${slotData.table}</strong> – ${slotData.name || '—'}`;
             document.body.appendChild(banner);
-
             setTimeout(() => banner.remove(), 10000);
 
-            // Attempt short system-compatible beep
+            // Short beep attempt
             try {
                 const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1000).join('Ag'));
                 audio.volume = 0.7;
@@ -312,6 +356,7 @@
                 console.warn("Beep attempt failed:", e);
             }
 
+            // Fallback alert
             alert(`Time's up! Table ${slotData.table} – ${slotData.name || '—'}`);
         }
 
@@ -328,8 +373,8 @@
                 let percent = totalMs > 0 ? (remainingMs / totalMs) * 100 : 0;
                 percent = Math.max(0, Math.min(100, percent));
 
-                let statusText = remainingMs <= 0 
-                    ? 'Expired' 
+                let statusText = remainingMs <= 0
+                    ? 'Expired'
                     : `${Math.floor(remainingMs/60000)}m ${Math.floor((remainingMs%60000)/1000)}s left`;
 
                 let progressClass = remainingMs <= 0 ? 'progress-red' :
@@ -342,7 +387,7 @@
                     <div style="font-weight:500; font-size:1.1rem;">
                         Table <strong>${data.table}</strong> • ${data.name || '—'} • ${data.mobile || '—'}
                     </div>
-                    <div style="color:#9ca3af;">${statusText}</div>
+                    <div style="color:var(--text-muted);">${statusText}</div>
                     <div class="progress-container">
                         <div class="progress-bar ${progressClass}" style="width: ${percent}%"></div>
                     </div>
@@ -360,7 +405,7 @@
             });
 
             if (Object.keys(slots).length === 0) {
-                container.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:3rem 0; font-size:1.1rem;">No active sessions at the moment.</p>';
+                container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:3rem 0; font-size:1.1rem;">No active sessions at the moment.</p>';
             }
         }
 
@@ -370,4 +415,3 @@
     </script>
 </body>
 </html>
-
